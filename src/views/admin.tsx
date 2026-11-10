@@ -10,7 +10,7 @@ import { SeasonSticker } from "@/components/season-sticker";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { categories, dishTagPresets, formatPrice, getDishTags, parseVietnamDateTime, themes, type ThemeName } from "@/lib/menu-data";
+import { categories, dishTagPresets, formatPrice, getDishTags, parseVietnamDateTime, themeNames, themes, type ThemeName } from "@/lib/menu-data";
 import { defaultShopSchedule, shopDays, shopLocation, type Appearance, type MenuDish as Dish } from "@/lib/catalog";
 import type { Store } from "@/lib/store";
 import type { PublicMenu } from "@/lib/public-menu";
@@ -301,7 +301,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
         <section className="admin-sheet">
           <div className="mb-4 flex items-center justify-between"><div><h3 className="font-bold">Chọn không khí</h3><p className="mt-1 text-xs text-muted-foreground">Màu sắc và lời chào theo mùa.</p></div><span className="rounded-sm bg-secondary px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Đang chỉnh · {themes[theme].title}</span></div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {(Object.keys(themes) as ThemeName[]).map(key => <button key={key} type="button" aria-pressed={theme === key} onClick={() => chooseTheme(key)} className={`admin-theme-option theme-${key}`}>
+            {themeNames.map(key => <button key={key} type="button" aria-pressed={theme === key} onClick={() => chooseTheme(key)} className={`admin-theme-option theme-${key}`}>
               <span aria-hidden="true" className="admin-theme-swatch">{themes[key].motif || "!"}</span>
               <span className="flex items-center justify-between gap-1 px-2 py-2 text-sm font-bold">{themes[key].title}{theme === key && <Check size={15} className="shrink-0" />}</span>
             </button>)}

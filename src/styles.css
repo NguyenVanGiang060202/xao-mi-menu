@@ -216,17 +216,11 @@
   pointer-events: none;
 }
 
-.menu-awning-canopy {
-  position: relative;
-  height: 100%;
-  transform-origin: center top;
-  pointer-events: none;
-}
-
 .menu-awning-fabric {
   height: var(--awning-travel);
   transform-origin: center top;
   background: linear-gradient(#4d1c2729, transparent 50%, #fff4d326), var(--awning-stripes);
+  pointer-events: none;
 }
 
 .menu-awning-front {
@@ -236,19 +230,21 @@
   perspective: 9rem;
   transform-origin: center top;
   filter: drop-shadow(0 3px 2px #43181245);
+  pointer-events: none;
 }
 
-.menu-awning-front > span {
-  display: block;
-  height: 100%;
+.menu-awning-valance {
+  height: calc(100% + 6px);
   transform-origin: center top;
   background: linear-gradient(#4d1c2740, #4d1c2718), var(--awning-stripes);
-  mask: radial-gradient(ellipse 49% 100% at 50% 0, #000 98%, transparent) left top / var(--awning-stripe) 100% repeat-x;
+  background-size: 100% 100%, calc(2 * var(--awning-stripe)) 100%;
+  mask: linear-gradient(#000 0 0) top / 100% 2px no-repeat,
+    radial-gradient(ellipse 50% 100% at 50% 0, #000 99%, transparent) left 2px / var(--awning-stripe) calc(var(--awning-hem) - 2px) repeat-x;
 }
 
 .menu-hero-inner {
   z-index: 1;
-  padding-block: clamp(1rem, 3vw, 1.75rem);
+  padding-block: clamp(0.75rem, 2vw, 1.25rem);
 }
 
 .menu-sign { min-width: 0; }
@@ -386,7 +382,7 @@
   padding-inline: 0.75rem;
 }
 
-.menu-page.theme-default .menu-dish:hover:not(:disabled) {
+.menu-page.theme-default .menu-dish[data-available="true"]:hover {
   background: var(--secondary);
 }
 
@@ -405,38 +401,6 @@
   color: #fff6df;
 }
 .menu-category-heading { padding-inline: 1rem; }
-
-.menu-category-items { padding-bottom: 2rem; }
-
-.menu-edge-sticker {
-  position: absolute;
-  z-index: 1;
-  bottom: -1.25rem;
-  right: 0.65rem;
-  width: clamp(4.6rem, 10vw, 6.4rem);
-  height: auto;
-  overflow: visible;
-  pointer-events: none;
-  transform: rotate(calc(var(--sticker-tilt, 13deg) + var(--sticker-hover-turn, 0deg))) scale(var(--sticker-hover-scale, 1));
-  filter: drop-shadow(0 2px 1px #72372845);
-}
-
-.menu-edge-egg {
-  width: clamp(3.6rem, 8vw, 5rem);
-  --sticker-tilt: -25deg;
-}
-
-.menu-edge-pepper {
-  bottom: -0.95rem;
-  width: clamp(3rem, 6vw, 4rem);
-  --sticker-tilt: -20deg;
-}
-
-.menu-edge-drink {
-  bottom: -1.3rem;
-  width: clamp(3.4rem, 7vw, 4.75rem);
-  --sticker-tilt: 19deg;
-}
 
 .dish-tag {
   display: inline-flex;
@@ -505,9 +469,10 @@
   background: var(--card);
 }
 
-.menu-page.theme-default .menu-category-items {
+.menu-category-items {
   column-gap: 1rem;
   padding-inline: 0.75rem;
+  padding-block-end: 0.75rem;
 }
 
 .menu-page.theme-default .menu-category-items .menu-dish {
@@ -581,17 +546,46 @@
   --season-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='186' height='144' viewBox='0 0 186 144' fill='none' stroke='%233c7854' stroke-opacity='.22' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M23 12v24M13 18l20 12m0-12L13 30M23 15l-3-2m3 2 3-2m-3 20-3 2m3-2 3 2M137 84v19m-8-14 16 9m0-9-16 9M69 101l-7 10h4l-6 8h18l-6-8h4z'/%3E%3Ccircle cx='113' cy='33' r='2' fill='%23b4443a' stroke='none' opacity='.24'/%3E%3Ccircle cx='170' cy='122' r='2' fill='%233c7854' stroke='none' opacity='.2'/%3E%3C/svg%3E");
 }
 .menu-season-sticker {
+  --sticker-tilt: 10deg;
   position: absolute;
   inset-inline-end: -0.25rem;
   bottom: -0.6rem;
   width: clamp(2.45rem, 6vw, 3.7rem);
   height: auto;
   pointer-events: none;
-  transform: rotate(calc(var(--sticker-tilt, 10deg) + var(--sticker-hover-turn, 0deg))) scale(var(--sticker-hover-scale, 1));
   filter: drop-shadow(1px 0 #fffdf4) drop-shadow(-1px 0 #fffdf4)
     drop-shadow(0 1px #fffdf4) drop-shadow(0 -1px #fffdf4)
     drop-shadow(0 2px 1px #38241640);
 }
+
+.menu-season-sticker:not(.menu-movable-sticker) { transform: rotate(var(--sticker-tilt)); }
+
+.menu-movable-sticker {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 0;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  transform: translate(var(--sticker-x, 0px), calc(var(--sticker-y, 0px) + var(--sticker-base-y, 0px)));
+}
+
+.menu-movable-sticker > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  pointer-events: none;
+  transform: rotate(calc(var(--sticker-tilt) + var(--sticker-hover-turn, 0deg)))
+    scale(calc(var(--sticker-scale, 1) * var(--sticker-hover-scale, 1)));
+}
+.menu-movable-sticker:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 0.5rem; }
+.menu-page .menu-movable-sticker:is([data-dragging="true"], [data-springing="true"]) { z-index: 3; }
+.menu-movable-sticker[data-dragging="true"] { cursor: grabbing; }
+.menu-page:has(.menu-movable-sticker:is([data-dragging="true"], [data-springing="true"])) { overflow-x: clip; }
 .theme-new-year {
   --sign-ink: #313b6a;
   --sign-paper: #f0edf9;
@@ -620,11 +614,37 @@
   --season-border: #e4be77;
   --season-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='150' viewBox='0 0 192 150' fill='none' stroke-width='1.4' stroke-linejoin='round'%3E%3Cg stroke='%23af5941' opacity='.22'%3E%3Cpath d='M151 18v7m0 23v8m-4-30h8m-8 21h8m-6 8v4m4-4v4'/%3E%3Cellipse cx='151' cy='36' rx='10' ry='10'/%3E%3Cellipse cx='151' cy='36' rx='4' ry='10'/%3E%3C/g%3E%3Cg fill='%23efba45' stroke='%23c18432' opacity='.28'%3E%3Cpath d='M35 28c-3-6-9-1-5 3-6 1-4 7 1 6-2 5 5 8 7 3 4 4 9-1 5-5 6-3 1-8-3-5-1-4-4-5-5-2Z'/%3E%3Cpath d='M86 107c-3-6-9-1-5 3-6 1-4 7 1 6-2 5 5 8 7 3 4 4 9-1 5-5 6-3 1-8-3-5-1-4-4-5-5-2Z'/%3E%3C/g%3E%3C/svg%3E");
 }
-.menu-page:is(.theme-christmas, .theme-new-year, .theme-tet) {
+.theme-teachers-day { --holiday-dark: #4e4876; --holiday-light: #ece1fa; --holiday-trim: #d69d6e; }
+.theme-culture-day { --holiday-dark: #255947; --holiday-light: #dcebd3; --holiday-trim: #d69a69; }
+.theme-hung-kings { --holiday-dark: #6d4325; --holiday-light: #fae6bc; --holiday-trim: #c48548; }
+.theme-april-holiday { --holiday-dark: #823d29; --holiday-light: #ffe3c2; --holiday-trim: #ce7351; }
+.theme-national-day { --holiday-dark: #942d35; --holiday-light: #ffe1a3; --holiday-trim: #d44c45; }
+.theme-mid-autumn { --holiday-dark: #493165; --holiday-light: #eee0f9; --holiday-trim: #ea9a64; }
+.theme-womens-day { --holiday-dark: #81324f; --holiday-light: #f7dce5; --holiday-trim: #cf7294; }
+
+:is(.theme-teachers-day, .theme-culture-day, .theme-hung-kings, .theme-april-holiday,
+  .theme-national-day, .theme-mid-autumn, .theme-womens-day) {
+  --sign-ink: var(--holiday-dark);
+  --sign-paper: var(--holiday-light);
+  --hero-paper: var(--holiday-dark);
+  --hero-ink: #fff5de;
+  --hero-edge: color-mix(in srgb, var(--holiday-dark) 78%, #26151a);
+  --awning-light: var(--holiday-light);
+  --awning-dark: var(--holiday-trim);
+  --contact-button: color-mix(in srgb, var(--holiday-light) 76%, var(--holiday-trim));
+  --season-category: var(--holiday-light);
+  --season-card: color-mix(in srgb, var(--holiday-light) 28%, #fffdf8);
+  --season-border: color-mix(in srgb, var(--holiday-dark) 22%, var(--holiday-light));
+  --season-pattern: radial-gradient(circle at 1.1rem 1.1rem, color-mix(in srgb, var(--holiday-trim) 26%, transparent) 2px, transparent 2.7px),
+    radial-gradient(circle at 3.7rem 2.6rem, color-mix(in srgb, var(--holiday-dark) 15%, transparent) 1px, transparent 1.7px);
+  background-size: 7.5rem 6rem, 7.5rem 6rem;
+}
+
+.menu-page:not(.theme-default) {
   background-image: var(--season-pattern);
 }
 
-.menu-page:is(.theme-christmas, .theme-new-year, .theme-tet) .menu-hero {
+.menu-page:not(.theme-default) .menu-hero {
   --contact-ink: var(--sign-ink);
   --contact-muted: color-mix(in srgb, var(--sign-ink) 78%, #5b504a);
   --contact-accent: var(--sign-ink);
@@ -693,16 +713,6 @@
   to { scale: 1; rotate: 0deg; }
 }
 
-@keyframes menu-sheet-open {
-  from { translate: 0 100%; }
-  to { translate: 0 0; }
-}
-
-@keyframes menu-sheet-close {
-  from { translate: 0 0; }
-  to { translate: 0 100%; }
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .menu-page {
     --menu-motion-out: cubic-bezier(0.2, 0.72, 0.25, 1);
@@ -711,7 +721,7 @@
 
   .menu-awning-fabric { animation: awning-extend var(--awning-duration) var(--menu-motion-out) both; }
   .menu-awning-front { animation: awning-front-travel var(--awning-duration) var(--menu-motion-out) both; }
-  .menu-awning-front > span { animation: awning-hem-unfold var(--awning-duration) var(--menu-motion-out) both; }
+  .menu-awning-valance { animation: awning-hem-unfold var(--awning-duration) var(--menu-motion-out) both; }
 
   .menu-channel-tab {
     animation: menu-dock 350ms var(--tab-delay, 100ms) var(--menu-motion-out) backwards;
@@ -745,11 +755,11 @@
   .menu-category-count { --stamp-delay: 110ms; }
 
   .menu-storefront .menu-brand-mark > .menu-season-sticker,
-  .menu-category > :is(.menu-edge-sticker, .menu-season-sticker) {
+  .menu-category > .menu-season-sticker {
     animation: menu-sticker-settle 620ms var(--sticker-delay, 125ms) var(--menu-motion-out) backwards;
   }
   .menu-storefront .menu-brand-mark > .menu-season-sticker { --sticker-delay: 345ms; }
-  .menu-category:nth-child(even) > :is(.menu-edge-sticker, .menu-season-sticker) {
+  .menu-category:nth-child(even) > .menu-season-sticker {
     --sticker-swing: 20deg;
     --sticker-delay: 185ms;
   }
@@ -757,8 +767,7 @@
   .menu-channel-tab,
   .menu-channel-cta,
   .menu-filter,
-  .menu-directions,
-  .menu-dish {
+  .menu-directions {
     transition: translate 170ms var(--menu-motion-out), scale 170ms var(--menu-motion-out);
   }
 
@@ -766,7 +775,6 @@
   .menu-channel-cta:active,
   .menu-filter:active,
   .menu-contact-action:active .menu-directions { scale: 0.97; translate: 0 1px; }
-  .menu-dish:active:not(:disabled) { scale: 0.986; }
 
   .menu-channel-cta svg,
   .menu-directions svg,
@@ -778,24 +786,19 @@
   .menu-channel-cta:focus-visible svg,
   .menu-contact-action:focus-visible .menu-directions svg { translate: 2px -2px; }
   .menu-search:focus-within > svg { translate: 1px -1px; rotate: -12deg; }
-  .menu-dish:focus-visible > img { rotate: -3deg; translate: 0 -2px; }
 
-  .menu-category > :is(.menu-edge-sticker, .menu-season-sticker),
-  .menu-brand-mark > .menu-season-sticker {
+  .menu-movable-sticker > svg {
     transition: transform 330ms cubic-bezier(0.22, 1.45, 0.4, 1);
   }
 
-  .menu-category:focus-within > :is(.menu-edge-sticker, .menu-season-sticker) {
+  .menu-category:focus-within > .menu-season-sticker {
     --sticker-hover-turn: 7deg;
     --sticker-hover-scale: 1.08;
   }
 
   @media (hover: hover) and (pointer: fine) {
     .menu-awning { pointer-events: auto; }
-    .menu-awning-canopy { transition: scale 420ms var(--menu-motion-out); }
-    .menu-awning-front { transition: rotate 540ms cubic-bezier(0.2, 1.45, 0.4, 1); }
-    .menu-awning:hover .menu-awning-canopy { scale: 1 0.82; }
-    .menu-awning:hover .menu-awning-front { rotate: x 36deg; }
+    .menu-awning-valance[data-rippling="true"] { mask: none; }
 
     .menu-channel-tab:hover:not(:active),
     .menu-channel-cta:hover:not(:active) { translate: 0 -3px; }
@@ -804,14 +807,14 @@
 
     .menu-channel-cta:hover svg,
     .menu-contact-action:hover .menu-directions svg { translate: 2px -2px; }
-    .menu-dish:hover:not(:disabled) > img { rotate: -3deg; translate: 0 -2px; }
+    .menu-dish[data-available="true"]:hover > img { rotate: -3deg; translate: 0 -2px; }
 
-    .menu-category:hover > :is(.menu-edge-sticker, .menu-season-sticker),
+    .menu-category:hover > .menu-season-sticker,
     .menu-brand-mark:hover > .menu-season-sticker {
       --sticker-hover-turn: 9deg;
       --sticker-hover-scale: 1.1;
     }
-    .menu-category:nth-child(even):hover > :is(.menu-edge-sticker, .menu-season-sticker) {
+    .menu-category:nth-child(even):hover > .menu-season-sticker {
       --sticker-hover-turn: -9deg;
     }
     .menu-category-heading :is(.menu-category-stamp, .menu-category-count) {
@@ -821,7 +824,7 @@
   }
 
   @supports (animation-timeline: view()) {
-    .menu-category > :is(.menu-edge-sticker, .menu-season-sticker) {
+    .menu-category > .menu-season-sticker {
       animation: menu-sticker-settle 620ms var(--sticker-delay, 125ms) var(--menu-motion-out) backwards,
         menu-sticker-drift linear both;
       animation-timeline: auto, view();
@@ -831,8 +834,6 @@
     .menu-category > .menu-season-sticker[data-side="end"] { --sticker-drift: 0.3rem; }
   }
 
-  .menu-dish-sheet[data-state="open"] { animation: menu-sheet-open 360ms cubic-bezier(0.2, 0.72, 0.25, 1) both; }
-  .menu-dish-sheet[data-state="closed"] { animation: menu-sheet-close 220ms cubic-bezier(0.5, 0, 0.8, 0.4) both; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -843,14 +844,14 @@
   }
 }
 
-.menu-page:is(.theme-christmas, .theme-new-year, .theme-tet) .menu-category {
+.menu-page:not(.theme-default) .menu-category {
   border: 1px solid var(--season-border);
   border-radius: 1.25rem;
   background: var(--season-card);
   box-shadow: 0 3px 0 color-mix(in srgb, var(--season-border) 45%, transparent);
 }
 
-.menu-page:is(.theme-christmas, .theme-new-year, .theme-tet) .menu-category-heading {
+.menu-page:not(.theme-default) .menu-category-heading {
   margin: 0;
   border-bottom: 1px solid var(--season-border);
   border-radius: calc(1.25rem - 1px) calc(1.25rem - 1px) 0 0;
@@ -859,22 +860,17 @@
   color: var(--sign-ink);
 }
 
-.menu-page:is(.theme-christmas, .theme-new-year, .theme-tet) .menu-category-stamp {
+.menu-page:not(.theme-default) .menu-category-stamp {
   background: var(--sign-ink);
 }
 
-.menu-page:is(.theme-christmas, .theme-new-year, .theme-tet) .menu-category-items {
-  gap: 0 1rem;
-  padding: 0 0.75rem 1.7rem;
-}
-
-.menu-page:is(.theme-christmas, .theme-new-year, .theme-tet) .menu-dish {
+.menu-page:not(.theme-default) .menu-dish {
   border-color: var(--season-border);
   border-radius: 0;
   white-space: normal;
 }
 
-.menu-page:is(.theme-christmas, .theme-new-year, .theme-tet) .menu-dish:hover:not(:disabled) {
+.menu-page:not(.theme-default) .menu-dish[data-available="true"]:hover {
   background: var(--season-category);
 }
 
@@ -905,8 +901,9 @@
     bottom: auto;
     width: clamp(2.5rem, calc(30vw - 20.4rem), 4.5rem);
     opacity: 0.75;
-    transform: translateY(-20%) rotate(calc(var(--gutter-tilt) + var(--sticker-hover-turn, 0deg)))
-      scale(calc(var(--gutter-scale) * var(--sticker-hover-scale, 1)));
+    --sticker-base-y: -20%;
+    --sticker-tilt: var(--gutter-tilt);
+    --sticker-scale: var(--gutter-scale);
   }
 
   .menu-category > .menu-season-sticker[data-position="gutter"][data-side="start"] {

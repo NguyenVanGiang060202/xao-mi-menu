@@ -1,6 +1,7 @@
 import "server-only";
 import { neon } from "@neondatabase/serverless";
 import { defaultAppearance, dishMatchKey, platformMenus, seedMenus, type Appearance, type MenuDish, type Platform, type PlatformDraftDish, type ShopInfo, type Voucher } from "./catalog";
+import { isHolidayTheme } from "./menu-data";
 
 type PlatformMenuKey = (typeof platformMenus)[Platform]["key"];
 export type PlatformSnapshots = Partial<Record<PlatformMenuKey, { dishes: PlatformDraftDish[]; syncedAt: string }>>;
@@ -32,7 +33,9 @@ export async function readStoreWithMenuRevision(): Promise<{ store: Store; menuR
     ...dish,
     image: dish.image || shopPhotos.get(dish.id),
   }));
-  const seasonSchedules = row?.data?.seasonSchedules ?? (row?.data?.schedule ? [row.data.schedule] : []);
+  const seasons = row?.data?.seasonSchedules ?? (row?.data?.schedule ? [row.data.schedule] : []);
+  const seasonSchedules: SeasonSchedule[] = [...seasons, ...(row?.data?.holidaySchedules ?? [])];
+  seasonSchedules.sort((a, b) => a.start - b.start);
   return { store: { ...store, dishes, seasonSchedules }, menuRevision: row?.revision ?? "" };
 }
 
@@ -133,8 +136,9 @@ export async function publishAppearance(appearance: Appearance) {
 
 export async function changeSeasonSchedule(schedule: SeasonSchedule | null, previousStart: number | null) {
   const sql = database();
-  const [row] = await sql`SELECT data->'seasonSchedules' AS seasons, data->'schedule' AS legacy FROM menu_state WHERE id = 1`;
-  const current: SeasonSchedule[] = row?.seasons ?? (row?.legacy ? [row.legacy] : []);
+  const [row] = await sql`SELECT data->'seasonSchedules' AS seasons, data->'holidaySchedules' AS holidays, data->'schedule' AS legacy FROM menu_state WHERE id = 1`;
+  const seasons = row?.seasons ?? (row?.legacy ? [row.legacy] : []);
+  const current: SeasonSchedule[] = [...seasons, ...(row?.holidays ?? [])];
   if (previousStart !== null && !current.some(item => item.start === previousStart)) {
     return "Lịch đã thay đổi ở phiên khác. Hãy tải lại trang.";
   }
@@ -146,11 +150,17 @@ export async function changeSeasonSchedule(schedule: SeasonSchedule | null, prev
     seasonSchedules.push(schedule);
   }
   seasonSchedules.sort((a, b) => a.start - b.start);
+  // Older deployments still read seasonSchedules and only know the original themes.
+  const changes = {
+    seasonSchedules: seasonSchedules.filter(item => !isHolidayTheme(item.appearance.theme)),
+    holidaySchedules: seasonSchedules.filter(item => isHolidayTheme(item.appearance.theme)),
+  };
   const rows = await sql`INSERT INTO menu_state (id, data)
-    SELECT 1, ${JSON.stringify({ ...defaults, seasonSchedules })}::jsonb
+    SELECT 1, ${JSON.stringify({ ...defaults, ...changes })}::jsonb
     WHERE ${!row} OR EXISTS (SELECT 1 FROM menu_state WHERE id = 1)
-    ON CONFLICT (id) DO UPDATE SET data = jsonb_set(menu_state.data, '{seasonSchedules}', EXCLUDED.data->'seasonSchedules')
+    ON CONFLICT (id) DO UPDATE SET data = menu_state.data || ${JSON.stringify(changes)}::jsonb
     WHERE COALESCE(menu_state.data->'seasonSchedules', 'null'::jsonb) = ${JSON.stringify(row?.seasons ?? null)}::jsonb
+      AND COALESCE(menu_state.data->'holidaySchedules', 'null'::jsonb) = ${JSON.stringify(row?.holidays ?? null)}::jsonb
       AND COALESCE(menu_state.data->'schedule', 'null'::jsonb) = ${JSON.stringify(row?.legacy ?? null)}::jsonb
     RETURNING id`;
   return rows.length === 1 ? undefined : "Lịch đã thay đổi ở phiên khác. Hãy tải lại trang.";

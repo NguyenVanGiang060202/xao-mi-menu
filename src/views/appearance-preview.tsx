@@ -81,7 +81,7 @@ export function AppearancePreview({ menu, draft, busy, notification, onOpenChang
           </SheetClose>
           <div className="min-w-0">
             <SheetTitle className="text-lg font-bold">Xem trước toàn bộ trang</SheetTitle>
-            <SheetDescription className="text-xs text-muted-foreground">Thử các tab, bộ lọc và xem chi tiết món như trên trang khách.</SheetDescription>
+            <SheetDescription className="text-xs text-muted-foreground">Thử các tab, bộ lọc và xem thực đơn như trên trang khách.</SheetDescription>
           </div>
           <div role="group" aria-label="Phiên bản giao diện" className="flex flex-wrap gap-2">
             <Button aria-pressed={version === "published"} variant={version === "published" ? undefined : "outline"} onClick={() => setVersion("published")}>Đang hiển thị</Button>

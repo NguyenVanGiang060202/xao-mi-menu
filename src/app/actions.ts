@@ -10,6 +10,7 @@ import { changeSeasonSchedule, publishAppearance, publishPlatformMenu, readStore
 import { fetchBeMenu } from "@/lib/be-menu-sync";
 import { fetchGrabMenu } from "@/lib/grab-menu-sync";
 import { platformMenus, type Platform, type PlatformDraftDish } from "@/lib/catalog";
+import { themeNames } from "@/lib/menu-data";
 
 async function requireAdmin() {
   if (!await isAdmin()) throw new Error("Bạn cần đăng nhập.");
@@ -40,7 +41,7 @@ export async function previewPlatformMenu(value: unknown) {
 
 export async function login(form: FormData) {
   const password = process.env.ADMIN_PASSWORD;
-  if (!password || (process.env.NODE_ENV !== "development" && password.length < 16) || !equal(String(form.get("password") ?? ""), password)) redirect("/admin?error=1");
+  if (!password || (process.env.NODE_ENV !== "development" && password.length < 12) || !equal(String(form.get("password") ?? ""), password)) redirect("/admin?error=1");
   const maxAge = 8 * 60 * 60;
   (await cookies()).set(cookieName, signSession(Date.now() + maxAge * 1000), {
     maxAge, httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/",
@@ -91,7 +92,7 @@ export async function syncBeToShop() {
 }
 const color = z.string().regex(/^#[0-9a-f]{6}$/i);
 const appearanceSchema = z.object({
-  theme: z.enum(["default","christmas","new-year","tet"]),
+  theme: z.enum(themeNames),
   greeting: z.string().trim().max(52),
   accent: color,
   background: z.union([z.literal(""), color]),

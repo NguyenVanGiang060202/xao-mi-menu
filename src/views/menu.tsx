@@ -5,13 +5,7 @@ import { ArrowUpRight, Clock3, CupSoda, Flame, Layers, MapPin, MessageCircle, Se
 import { Button } from "@/components/ui/button";
 import { DishTag } from "@/components/dish-tag";
 import { SeasonGutterStickers, SeasonSticker } from "@/components/season-sticker";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { StorefrontAwning } from "@/components/storefront-awning";
 import { formatPrice, getDishTags, themes, type Channel } from "@/lib/menu-data";
 import { channels, defaultShopSchedule, shopDays, shopLocation, type PlatformDraftDish as Dish, type Appearance, type ShopInfo, type Voucher } from "@/lib/catalog";
 const channelNames: Record<Channel, string> = { shop: "Menu quán", grab: "GrabFood", be: "beFood", xanh: "Xanh SM Ngon" };
@@ -40,9 +34,6 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
   const [channel, setChannel] = useState<Channel>("shop");
   const [category, setCategory] = useState("Tất cả");
   const [query, setQuery] = useState("");
-  const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const dishTrigger = useRef<HTMLButtonElement>(null);
   const [navigationStuck, setNavigationStuck] = useState(false);
   const navigationMarker = useRef<HTMLDivElement>(null);
   const theme = appearance.theme;
@@ -82,13 +73,8 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
       <header key={theme} className="menu-hero menu-storefront relative mx-auto max-w-6xl overflow-hidden">
         {appearance.image && <img src={appearance.image} alt="" width={1280} height={640} className="absolute inset-0 h-full w-full object-cover object-center opacity-35" />}
 
-        <div className="menu-awning" aria-hidden="true">
-          <div className="menu-awning-canopy">
-            <div className="menu-awning-fabric" />
-            <div className="menu-awning-front"><span /></div>
-          </div>
-        </div>
-        <div className="menu-hero-inner relative px-4 py-4 sm:px-6">
+        <StorefrontAwning />
+        <div className="menu-hero-inner relative px-4 sm:px-6">
           <div className="menu-sign">
             <div className="flex items-center gap-3 sm:gap-5">
               <div className="menu-brand-mark relative shrink-0">
@@ -96,7 +82,7 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
                   <img src={appearance.logo || "/xao-mi-logo.jpg"} alt="" width={112} height={112}
                     className={`size-full object-contain ${appearance.logo ? "" : "scale-[1.48]"}`} />
                 </div>
-                <SeasonSticker theme={theme} />
+                <SeasonSticker theme={theme} movable />
               </div>
               <div className="min-w-0">
                 {theme !== "default" && <p className="text-xs font-semibold">{themeInfo.eyebrow}</p>}
@@ -105,13 +91,13 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
               </div>
             </div>
           <section aria-label="Thông tin liên hệ của quán"
-            className="menu-shop-contact mt-3 grid min-w-0 gap-3 rounded-[1.65rem] border p-2.5 sm:p-5">
-            <div className="menu-contact-hours relative flex flex-col items-center justify-center gap-2 rounded-[1.15rem] p-4">
-              <Clock3 size={21} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
+            className="menu-shop-contact mt-3 grid min-w-0 gap-2 rounded-[1.65rem] border p-2 sm:p-3">
+            <div className="menu-contact-hours relative flex flex-col items-center justify-center gap-1.5 rounded-[1.15rem] p-2.5">
+              <Clock3 size={18} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
               <div className="min-w-0 w-full">
                 <p className="menu-contact-label text-center text-[13px] font-semibold leading-tight">Giờ mở cửa</p>
-                {!shop.schedule && shop.hours.trim() ? <p className="menu-hours-highlight mt-1 rounded-full px-3 py-2 text-center text-sm font-bold">{shop.hours}</p> : <dl className="menu-hours-slots mt-3 grid gap-2 text-center text-xs tabular-nums">
-                  {shopDays.map(({ id, label }) => <div key={id} className="menu-hours-highlight rounded-xl px-2 py-2">
+                {!shop.schedule && shop.hours.trim() ? <p className="menu-hours-highlight mt-1 rounded-full px-3 py-1.5 text-center text-sm font-bold">{shop.hours}</p> : <dl className="menu-hours-slots mt-2 grid gap-1.5 text-center text-xs tabular-nums">
+                  {shopDays.map(({ id, label }) => <div key={id} className="menu-hours-highlight rounded-xl px-2 py-1.5">
                     <dt className="menu-contact-label">{label}</dt>
                     <dd className="menu-hours-value mt-0.5 text-lg font-extrabold leading-tight sm:text-xl">{schedule[id].open} – {schedule[id].close}</dd>
                   </div>)}
@@ -119,25 +105,25 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
               </div>
             </div>
             <a href={shopLocation.mapsUrl} target="_blank" rel="noreferrer"
-              className="menu-contact-action grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-2 rounded-[1.15rem] p-3 focus-visible:outline-2 focus-visible:-outline-offset-2">
-              <MapPin size={21} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
+              className="menu-contact-action grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-1 rounded-[1.15rem] px-2.5 py-2 focus-visible:outline-2 focus-visible:-outline-offset-2">
+              <MapPin size={18} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
               <span className="min-w-0 flex-1">
                 <span className="menu-contact-label block text-[13px] font-semibold leading-tight">Địa chỉ</span>
                 <span className="mt-0.5 block text-base font-extrabold leading-tight">{shopLocation.address}</span>
               </span>
-              <span className="menu-directions col-start-2 inline-flex min-h-8 w-24 items-center justify-center gap-1 justify-self-start rounded-full px-2 text-xs font-extrabold">
-                Chỉ đường <ArrowUpRight size={13} aria-hidden="true" />
+              <span className="menu-directions col-start-2 inline-flex min-h-6 min-w-20 items-center justify-center gap-1 justify-self-start rounded-full px-2 text-xs font-extrabold">
+                Chỉ đường <ArrowUpRight size={12} aria-hidden="true" />
               </span>
             </a>
             <a href={zaloUrl} target="_blank" rel="noreferrer"
-              className="menu-contact-action grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-2 rounded-[1.15rem] p-3 focus-visible:outline-2 focus-visible:-outline-offset-2">
-              <MessageCircle size={21} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
+              className="menu-contact-action grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-1 rounded-[1.15rem] px-2.5 py-2 focus-visible:outline-2 focus-visible:-outline-offset-2">
+              <MessageCircle size={18} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
               <span className="min-w-0">
                 <span className="menu-contact-label block text-[13px] font-semibold leading-tight">Đặt món qua Zalo</span>
                 <span className="mt-0.5 block text-base leading-tight"><strong className="font-extrabold tabular-nums">{zaloNumber}</strong><span className="menu-contact-label"> · Hiếu Kiên</span></span>
               </span>
-              <span className="menu-directions col-start-2 inline-flex min-h-8 w-24 items-center justify-center gap-1 justify-self-start rounded-full px-2 text-xs font-extrabold">
-                Đặt món <ArrowUpRight size={13} aria-hidden="true" />
+              <span className="menu-directions col-start-2 inline-flex min-h-6 min-w-20 items-center justify-center gap-1 justify-self-start rounded-full px-2 text-xs font-extrabold">
+                Đặt món <ArrowUpRight size={12} aria-hidden="true" />
               </span>
             </a>
           </section>
@@ -176,71 +162,24 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
             <h3 className="text-xl font-bold sm:text-2xl">{group.name}</h3>
             <span key={group.dishes.length} className="menu-category-count ml-auto text-xs">{group.dishes.length} món</span>
           </div>
-          {theme !== "default" ? <SeasonSticker theme={theme} category={group.name} /> : group.name === "Combo" ? <svg className="menu-edge-sticker menu-edge-egg" aria-hidden="true" viewBox="0 0 76 66">
-            <path d="M13 30C4 20 22 8 33 13c10-13 30-3 31 9 14 8 8 28-6 29-7 13-27 12-34 3C9 56 3 38 13 30Z" fill="#fff7df" stroke="#fffaf0" strokeWidth="9" />
-            <path d="M13 30C4 20 22 8 33 13c10-13 30-3 31 9 14 8 8 28-6 29-7 13-27 12-34 3C9 56 3 38 13 30Z" fill="#fff0c6" stroke="#8c422a" strokeWidth="2" />
-            <circle cx="39" cy="34" r="14" fill="#ffb43e" stroke="#d28332" strokeWidth="1.5" />
-            <path d="M30 31q2-5 7-6" fill="none" stroke="#ffdd84" strokeWidth="2" strokeLinecap="round" />
-            <path d="M34 35h1m9 0h1m-10 5q4 3 8 0" fill="none" stroke="#853525" strokeWidth="2" strokeLinecap="round" />
-          </svg> : group.name === "Đồ uống" ? <svg className="menu-edge-sticker menu-edge-drink" aria-hidden="true" viewBox="0 0 76 80">
-            <path d="m21 25 6 45h27l6-45H21Zm24 0 8-19h13" fill="#f7ca68" stroke="#fffaf0" strokeWidth="10" strokeLinejoin="round" strokeLinecap="round" />
-            <path d="m21 25 6 45h27l6-45H21Zm24 0 8-19h13M25 38h32m-22 10h1m9 0h1m-9 6q4 4 8 0" fill="none" stroke="#853525" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-            <circle cx="19" cy="28" r="11" fill="#d8df81" stroke="#547039" strokeWidth="2" />
-            <path d="M19 21v14m-6-3 12-8m-12 0 12 8" stroke="#7c923d" strokeWidth="1.5" strokeLinecap="round" />
-          </svg> : group.name === "Mì trộn" ? <svg className="menu-edge-sticker menu-edge-pepper" aria-hidden="true" viewBox="0 0 76 66">
-            <path d="M57 20q0-10 10-13M55 18c-18-7-18 27-47 36 24 9 47-4 55-24 3-7-2-12-8-12Z" fill="#ea6950" stroke="#fffaf0" strokeWidth="9" strokeLinejoin="round" strokeLinecap="round" />
-            <path d="M57 20q0-10 10-13" fill="none" stroke="#547039" strokeWidth="4" strokeLinecap="round" />
-            <path d="M55 18c-18-7-18 27-47 36 24 9 47-4 55-24 3-7-2-12-8-12Z" fill="#ea6950" stroke="#853525" strokeWidth="2" />
-            <path d="M44 30q2-5 6-6m-12 16 1-1m8-3 1-1m-7 8q3 2 6-2" fill="none" stroke="#853525" strokeWidth="1.8" strokeLinecap="round" />
-          </svg> : <svg className="menu-edge-sticker" aria-hidden="true" viewBox="0 0 76 66" fill="none">
-            <path d="M12 32h51a4 4 0 0 1 4 5c-3 15-13 24-29 24S12 52 8 37a4 4 0 0 1 4-5Z" fill="#f9bc56" stroke="#fffaf0" strokeWidth="10" />
-            <path d="M26 30c-9-9 10-13 4-22m10 22c-9-9 10-13 4-22M51 33 64 8M58 34 71 12" stroke="#fffaf0" strokeWidth="8" strokeLinecap="round" />
-            <path d="M26 30c-9-9 10-13 4-22m10 22c-9-9 10-13 4-22" stroke="#df8a2f" strokeWidth="3" strokeLinecap="round" />
-            <path d="M51 33 64 8M58 34 71 12" stroke="#853525" strokeWidth="3" strokeLinecap="round" />
-            <path d="M12 32h51a4 4 0 0 1 4 5c-3 15-13 24-29 24S12 52 8 37a4 4 0 0 1 4-5Z" fill="#f9bc56" stroke="#853525" strokeWidth="2" />
-            <path d="M16 42h45m-29 6h1m10 0h1m-11 5q5 4 10 0" stroke="#853525" strokeWidth="2" strokeLinecap="round" />
-          </svg>}
+          <SeasonSticker theme={theme} category={group.name} movable />
           <div className="menu-category-items grid sm:grid-cols-2">
-            {group.dishes.map((dish) => <DishRow key={dish.id} dish={dish} channel={channel} onSelect={trigger => {
-              dishTrigger.current = trigger;
-              setSelectedDish(dish);
-              setDetailOpen(true);
-            }} />)}
+            {group.dishes.map(dish => <DishRow key={dish.id} dish={dish} channel={channel} />)}
           </div>
         </section>) : <div className="mb-8 rounded-3xl border border-dashed border-primary/25 bg-card py-12 text-center text-sm text-muted-foreground">{menu.length ? "Chưa tìm thấy món phù hợp." : "Menu quán đang được cập nhật."}{!menu.length && <div className="mt-3 flex justify-center gap-3"><Button variant="outline" onClick={() => setChannel("grab")}>Xem menu GrabFood</Button><Button variant="outline" onClick={() => setChannel("be")}>Xem menu beFood</Button></div>}</div>}
 
         {activeVouchers.length > 0 && <section className="mb-6 rounded border border-border p-4"><h3 className="font-bold">Voucher</h3><ul>{activeVouchers.map(voucher => <li key={voucher.title + voucher.code} className="mt-2 text-sm">{voucher.title} {voucher.code && <strong>{voucher.code}</strong>} · {voucher.terms}</li>)}</ul></section>}
         </div>
       </div>
-
-
-      <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
-        <SheetContent side="bottom" className="menu-dish-sheet mx-auto max-h-[88dvh] max-w-xl overflow-y-auto rounded-t-xl border-border px-5 pb-8 sm:px-7" onCloseAutoFocus={event => {
-          const trigger = dishTrigger.current;
-          if (trigger?.isConnected) {
-            event.preventDefault();
-            trigger.focus({ preventScroll: true });
-          }
-        }}>
-          {selectedDish && <>
-            {selectedDish.image && <img src={selectedDish.image} alt={selectedDish.name} width={1024} height={1024} className="mb-5 h-48 w-full rounded-md object-cover" />}
-            <SheetHeader className="text-left"><p className="text-xs font-bold uppercase tracking-wider text-primary">{selectedDish.category}</p><SheetTitle className="text-2xl">{selectedDish.name}</SheetTitle><SheetDescription>{selectedDish.description}</SheetDescription></SheetHeader>
-            <DishTags dish={selectedDish} />
-            {selectedDish.ingredients && <p className="mt-4 text-sm">{selectedDish.ingredients}</p>}
-            {selectedDish.price === null && <Button asChild className="mt-5 w-full"><a href={channels.grab.url} target="_blank" rel="noreferrer">Xem giá trên GrabFood <ArrowUpRight size={15} /></a></Button>}
-            <Button className="mt-3 w-full" onClick={() => setDetailOpen(false)}>Đóng{selectedDish.price !== null && ` · ${formatPrice(selectedDish.price)}`}</Button>
-          </>}
-        </SheetContent>
-      </Sheet>
     </main>
   );
 }
 
-function DishRow({ dish, channel, onSelect }: { dish: Dish; channel: Channel; onSelect: (trigger: HTMLButtonElement) => void }) {
+function DishRow({ dish, channel }: { dish: Dish; channel: Channel }) {
   const { price } = dish;
   const discount = channel !== "shop" && dish.originalPrice !== undefined && price !== null ? dish.originalPrice - price : 0;
-  return <Button variant="ghost" disabled={!dish.available} onClick={event => onSelect(event.currentTarget)} className={`menu-dish group flex h-auto min-h-[114px] min-w-0 w-full items-center justify-start gap-3 overflow-hidden rounded-xl border-b border-border px-1 py-3 text-left hover:bg-secondary/50 sm:gap-4 ${!dish.available ? "cursor-not-allowed opacity-55" : ""}`}>
-    {dish.image ? <img src={dish.image} alt={dish.name} width={1024} height={1024} loading="lazy" className="size-[68px] shrink-0 rounded-2xl object-cover sm:size-[80px]" /> : <div className="flex size-[68px] shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary/70 sm:size-[80px]"><Soup size={28} strokeWidth={1.5} /></div>}
+  return <article data-available={dish.available} className={`menu-dish flex min-h-[114px] min-w-0 w-full items-center gap-3 overflow-hidden rounded-xl border-b border-border px-1 py-3 text-left sm:gap-4 ${dish.available ? "" : "opacity-55"}`}>
+    {dish.image ? <img src={dish.image} alt="" width={1024} height={1024} loading="lazy" className="size-[68px] shrink-0 rounded-2xl object-cover sm:size-[80px]" /> : <div aria-hidden="true" className="flex size-[68px] shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary/70 sm:size-[80px]"><Soup size={28} strokeWidth={1.5} /></div>}
     <span className="flex min-w-0 flex-1 flex-col self-stretch justify-center">
       <span className="flex min-w-0 flex-wrap items-center gap-1.5">
         <span className="text-base font-bold text-foreground">{dish.name}</span>
@@ -248,11 +187,16 @@ function DishRow({ dish, channel, onSelect }: { dish: Dish; channel: Channel; on
         {!dish.available && <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">Tạm hết</span>}
       </span>
       <DishTags dish={dish} />
-      <span className="mt-1 line-clamp-2 text-xs font-normal leading-5 text-muted-foreground">{dish.description}</span>
-      <span className="mt-2 flex flex-wrap items-baseline gap-x-2 text-base font-bold tabular-nums text-foreground">{price === null ? <span className="text-xs text-muted-foreground">Xem giá trên GrabFood</span> : formatPrice(price)}{discount > 0 && dish.originalPrice !== undefined && <span className="text-xs font-medium text-muted-foreground line-through">{formatPrice(dish.originalPrice)}</span>}</span>
+      {(dish.description || dish.ingredients) && <span className="mt-1 text-xs font-normal leading-5 text-muted-foreground">{dish.description || dish.ingredients}</span>}
+      <span className="mt-2 flex flex-wrap items-baseline gap-x-2 text-base font-bold tabular-nums text-foreground">
+        {price === null ? <a href={channels.grab.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded text-xs text-muted-foreground underline underline-offset-2 focus-visible:outline-2">
+          Xem giá trên GrabFood <ArrowUpRight size={13} aria-hidden="true" />
+        </a> : formatPrice(price)}
+        {discount > 0 && dish.originalPrice !== undefined && <span className="text-xs font-medium text-muted-foreground line-through">{formatPrice(dish.originalPrice)}</span>}
+      </span>
     </span>
     {Boolean(dish.spicy) && <span className="flex shrink-0 items-center text-xs font-normal text-primary" aria-label={`Cay mức ${dish.spicy}`}>{Array.from({ length: dish.spicy ?? 0 }, (_, index) => <Flame size={13} key={index} />)}</span>}
-  </Button>;
+  </article>;
 }
 
 function DishTags({ dish }: { dish: Dish }) {

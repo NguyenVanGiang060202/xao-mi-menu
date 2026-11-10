@@ -1,5 +1,7 @@
-import type { CSSProperties } from "react";
-import type { ThemeName } from "@/lib/menu-data";
+import type { CSSProperties, ReactNode } from "react";
+import { isHolidayTheme, type ThemeName } from "@/lib/menu-data";
+import { holidaySticker } from "./holiday-stickers";
+import { MovableSticker } from "./movable-sticker";
 
 type CategorySlot = "combo" | "fried" | "mixed" | "sides" | "drinks";
 
@@ -255,6 +257,89 @@ const artwork = {
 
 const gutterArtwork = ["gutter-start", "gutter-end", "gutter-extra-1", "gutter-extra-2", "gutter-extra-3", "gutter-extra-4"] as const;
 type GutterSlot = typeof gutterArtwork[number];
+const kitchenGutterArtwork = ["gutter-start", "gutter-end"] as const;
+const holidayStickerSlots = ["logo", "combo", "fried", "mixed", "sides", "drinks", ...gutterArtwork];
+const kitchenStickers: Partial<Record<"logo" | CategorySlot | GutterSlot, { label: string; art: ReactNode }>> = {
+  logo: {
+    label: "đũa gắp mì",
+    art: <>
+      <path d="M9 19 59 34m-51-5 50 9" stroke="#743b29" strokeWidth="6" />
+      <path d="M10 18 58 33M9 28l48 9" stroke="#d58c54" strokeWidth="2.4" />
+      <path d="M31 24c2-7 14-4 14 2l-1 20c0 8-12 7-12 0v-6m18-12c0-7 10-6 10 0l-2 23c0 6-7 9-10 5m-10-31v19" stroke="#8d482a" strokeWidth="6" />
+      <path d="M31 24c2-7 14-4 14 2l-1 20c0 8-12 7-12 0v-6m18-12c0-7 10-6 10 0l-2 23c0 6-7 9-10 5m-10-31v19" stroke="#ffc34e" strokeWidth="3.4" />
+      <path d="M22 46v10m-5-5h10m38-5v8m-4-4h8" stroke="#e08b2e" strokeWidth="2.4" />
+    </>,
+  },
+  combo: {
+    label: "chai tương ớt",
+    art: <>
+      <path d="M33 22v-7l6-6 5 6v8" fill="#ffb66a" stroke="#863b2c" />
+      <path d="M28 23h21v9c0 3 6 6 6 11v16a6 6 0 0 1-6 6H28a6 6 0 0 1-6-6V43c0-5 6-8 6-11Z" fill="#dd5e45" stroke="#863b2c" strokeWidth="2.1" />
+      <path d="M29 24h19v7H29Z" fill="#ffe1a2" stroke="#863b2c" />
+      <rect x="25" y="42" width="27" height="16" rx="5" fill="#fff1c9" stroke="#a45538" />
+      <path d="M44 45c-1 6-5 10-12 9 4-1 6-6 9-7l3-2Z" fill="#e2674c" stroke="#9b4331" />
+      <path d="m43 46 4-2M15 25l-5-4m5 12-7 1m54-1 5-5" stroke="#df8a2f" strokeWidth="2.4" />
+    </>,
+  },
+  fried: {
+    label: "chảo mì xào",
+    art: <>
+      <path d="M51 43 67 29a3 3 0 0 1 4 4L57 48" fill="#e79a54" stroke="#753d2d" strokeWidth="2.4" />
+      <path d="M10 42h48c-3 15-12 23-24 23S13 57 10 42Z" fill="#9a5041" stroke="#673527" strokeWidth="2.2" />
+      <ellipse cx="34" cy="42" rx="24" ry="8" fill="#ffd27a" stroke="#673527" strokeWidth="2.2" />
+      <path d="M17 42c6-8 13 5 18-1s12-3 17 0m-31 4c7-5 11 4 18 0" stroke="#be652c" strokeWidth="2.4" />
+      <path d="M25 32c-7-6 6-8 1-15m13 14c-7-6 5-10 1-16" stroke="#d27b38" strokeWidth="2.5" />
+      <path d="m26 41 3-2m13 5 3-2" stroke="#64804b" strokeWidth="2.6" />
+    </>,
+  },
+  drinks: {
+    label: "lát chanh",
+    art: <>
+      <path d="M14 40a23 23 0 0 1 46 0Z" fill="#f0ce62" stroke="#7e6b37" strokeWidth="2.4" />
+      <path d="M19 38a18 18 0 0 1 36 0Z" fill="#fff2b2" stroke="#ad9141" />
+      <path d="m37 38-12-13m12 13V21m0 17 12-13" stroke="#bb953c" />
+      <path d="M14 40h46c-3 10-11 15-23 15s-20-5-23-15Z" fill="#e3bb4a" stroke="#7e6b37" strokeWidth="2" />
+      <path d="M30 46h1m11 0h1m-8 2q2 3 4 0" stroke="#785033" strokeWidth="2" />
+      <path d="M61 16v10m-5-5h10M13 19v7m-4-4h8" stroke="#d38439" strokeWidth="2.2" />
+    </>,
+  },
+  mixed: {
+    label: "quả ớt",
+    art: <g transform="translate(0 5)">
+      <path d="M57 20q0-10 10-13M55 18c-18-7-18 27-47 36 24 9 47-4 55-24 3-7-2-12-8-12Z" fill="#ea6950" stroke="#fffaf0" strokeWidth="6" />
+      <path d="M57 20q0-10 10-13" stroke="#547039" strokeWidth="4" />
+      <path d="M55 18c-18-7-18 27-47 36 24 9 47-4 55-24 3-7-2-12-8-12Z" fill="#ea6950" stroke="#853525" strokeWidth="2" />
+      <path d="M44 30q2-5 6-6m-12 16 1-1m8-3 1-1m-7 8q3 2 6-2" stroke="#853525" />
+    </g>,
+  },
+  sides: {
+    label: "tô mì nóng",
+    art: <g transform="translate(0 6)">
+      <path d="M26 30c-9-9 10-13 4-22m10 22c-9-9 10-13 4-22" stroke="#df8a2f" strokeWidth="3" />
+      <path d="M51 33 64 8M58 34 71 12" stroke="#853525" strokeWidth="3" />
+      <path d="M12 32h51a4 4 0 0 1 4 5c-3 15-13 24-29 24S12 52 8 37a4 4 0 0 1 4-5Z" fill="#f9bc56" stroke="#853525" strokeWidth="2" />
+      <path d="M16 42h45m-29 6h1m10 0h1m-11 5q5 4 10 0" stroke="#853525" strokeWidth="2" />
+    </g>,
+  },
+  "gutter-start": {
+    label: "trứng ốp la",
+    art: <g transform="translate(0 5)">
+      <path d="M13 30C4 20 22 8 33 13c10-13 30-3 31 9 14 8 8 28-6 29-7 13-27 12-34 3C9 56 3 38 13 30Z" fill="#fff0c6" stroke="#8c422a" strokeWidth="2" />
+      <circle cx="39" cy="34" r="14" fill="#ffb43e" stroke="#d28332" strokeWidth="1.5" />
+      <path d="M30 31q2-5 7-6" stroke="#ffdd84" strokeWidth="2" />
+      <path d="M34 35h1m9 0h1m-10 5q4 3 8 0" stroke="#853525" strokeWidth="2" />
+    </g>,
+  },
+  "gutter-end": {
+    label: "ly nước",
+    art: <>
+      <path d="m21 25 6 45h27l6-45H21Zm24 0 8-19h13" fill="#f7ca68" stroke="#853525" strokeWidth="2.5" />
+      <path d="M25 38h32m-22 10h1m9 0h1m-9 6q4 4 8 0" stroke="#853525" strokeWidth="2.5" />
+      <circle cx="19" cy="28" r="11" fill="#d8df81" stroke="#547039" strokeWidth="2" />
+      <path d="M19 21v14m-6-3 12-8m-12 0 12 8" stroke="#7c923d" strokeWidth="1.5" />
+    </>,
+  },
+};
 type GutterPlacement = { slot: GutterSlot; side: "start" | "end"; style: CSSProperties };
 
 function mix(value: number) {
@@ -262,22 +347,23 @@ function mix(value: number) {
 }
 
 export function SeasonGutterStickers({ theme, index, seed }: { theme: ThemeName; index: number; seed: number }) {
-  if (theme === "default" || index > 4) return null;
+  const slots = theme === "default" || isHolidayTheme(theme) ? kitchenGutterArtwork : gutterArtwork;
 
-  // Reserve two designs for each of the first two categories, then one per category.
+  // Place up to two designs beside each of the first two categories.
   const first = index < 2 ? index * 2 : index + 2;
+  if (first >= slots.length) return null;
   const count = index < 2 ? 2 : 1;
-  const offset = mix(seed) % gutterArtwork.length;
+  const offset = mix(seed) % slots.length;
   const order = (mix(seed + 1) & 1) === 0 ? 1 : -1;
   const startsOnLeft = (mix(seed + index * 117) & 1) === 0;
 
   return Array.from({ length: count }, (_, number) => {
     const ordinal = first + number;
-    if (ordinal >= gutterArtwork.length) return null;
-    const slot = gutterArtwork[(offset + ordinal * order + gutterArtwork.length) % gutterArtwork.length];
+    if (ordinal >= slots.length) return null;
+    const slot = slots[(offset + ordinal * order + slots.length) % slots.length];
     const scatter = mix(seed + ordinal * 481 + 31);
     const side = startsOnLeft === (number === 0) ? "start" : "end";
-    return <SeasonSticker key={slot} theme={theme} gutter={{
+    return <SeasonSticker key={slot} theme={theme} movable gutter={{
       slot, side,
       style: {
         "--gutter-top": `${12 + (scatter % 41)}%`,
@@ -289,15 +375,30 @@ export function SeasonGutterStickers({ theme, index, seed }: { theme: ThemeName;
   });
 }
 
-export function SeasonSticker({ theme, category, gutter }: { theme: ThemeName; category?: string; gutter?: GutterPlacement }) {
-  if (theme === "default") return null;
+export function SeasonSticker({ theme, category, gutter, movable = false }: { theme: ThemeName; category?: string; gutter?: GutterPlacement; movable?: boolean }) {
   const placement = gutter ? { slot: gutter.slot, position: "gutter" }
-    : category === undefined ? { slot: "logo", position: "logo" } as const : placements.get(category);
+    : category === undefined ? { slot: "logo", position: "logo" } as const
+    : placements.get(category) ?? (theme === "default" ? { slot: "sides", position: "end" } as const : undefined);
   if (!placement) return null;
 
-  return <svg className="menu-season-sticker" aria-hidden="true" viewBox="0 0 76 76" fill="none"
-    data-season={theme} data-position={placement.position} data-sticker={placement.slot} data-side={gutter?.side} style={gutter?.style}
-    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    {artwork[theme][placement.slot]}
-  </svg>;
+  const kitchenSticker = theme === "default" ? kitchenStickers[placement.slot] : undefined;
+  const art = theme === "default" ? kitchenSticker?.art
+    : isHolidayTheme(theme) ? holidaySticker(theme, holidayStickerSlots.indexOf(placement.slot))
+    : artwork[theme][placement.slot];
+  if (!art) return null;
+  const styleProps = {
+    className: "menu-season-sticker",
+    "data-season": theme,
+    "data-position": placement.position,
+    "data-sticker": placement.slot,
+    "data-side": gutter?.side,
+    style: gutter?.style,
+  };
+  const svgProps = { viewBox: "0 0 76 76", fill: "none", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+  if (!movable) return <svg {...styleProps} {...svgProps} aria-hidden="true">{art}</svg>;
+
+  return <MovableSticker {...styleProps}
+    label={`Di chuyển sticker ${kitchenSticker?.label ?? (gutter ? "bên lề" : category ?? "cạnh logo")}`}>
+    <svg {...svgProps} aria-hidden="true">{art}</svg>
+  </MovableSticker>;
 }

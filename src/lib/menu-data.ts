@@ -1,5 +1,5 @@
 export type Channel = "shop" | "grab" | "be" | "xanh";
-export type ThemeName = "default" | "christmas" | "new-year" | "tet";
+type ThemePreset = { title: string; greeting: string; eyebrow: string; accent: string; background: string; motif: string };
 
 export type Dish = {
   id: string;
@@ -43,12 +43,30 @@ export const initialDishes: Dish[] = [
   { id: "soy", name: "Sữa đậu nành", category: "Đồ uống", description: "Nấu mới mỗi sáng, thơm dịu", price: 15000, available: true, ingredients: "Đậu nành, đường phèn." },
 ];
 
-export const themes: Record<ThemeName, { title: string; greeting: string; eyebrow: string; accent: string; background: string; motif: string }> = {
+export const holidayThemes = {
+  "teachers-day": { title: "Nhà giáo Việt Nam", greeting: "Kính chúc thầy cô một ngày thật vui!", eyebrow: "TRI ÂN THẦY CÔ · 20/11", accent: "#5b578d", background: "#f2effa", motif: "✎" },
+  "culture-day": { title: "Ngày Văn hóa Việt Nam", greeting: "Một chút hương vị Việt, ghé quán nha!", eyebrow: "NGÀY VĂN HÓA VIỆT NAM · 24/11", accent: "#306b57", background: "#edf5e9", motif: "❋" },
+  "hung-kings": { title: "Giỗ Tổ Hùng Vương", greeting: "Nhớ về cội nguồn, sẻ chia bữa cơm Việt.", eyebrow: "GIỖ TỔ HÙNG VƯƠNG · MÙNG 10 THÁNG 3", accent: "#805325", background: "#f8efdc", motif: "◉" },
+  "april-holiday": { title: "Lễ 30/4 – 1/5", greeting: "Chúc bạn một kỳ nghỉ vui!", eyebrow: "CHÀO MỪNG NGÀY LỄ · 30/4–1/5", accent: "#9a3d23", background: "#fff0de", motif: "✷" },
+  "national-day": { title: "Quốc khánh 2/9", greeting: "Chúc bạn một ngày Quốc khánh vui!", eyebrow: "CHÀO MỪNG QUỐC KHÁNH · 2/9", accent: "#a72a33", background: "#fff0e5", motif: "★" },
+  "mid-autumn": { title: "Tết Trung thu", greeting: "Trăng tròn, cùng nhau ăn mì nha!", eyebrow: "ĐÊM RẰM TRUNG THU · XÀO MÌ!", accent: "#5f3d8a", background: "#f2ecfb", motif: "☾" },
+  "womens-day": { title: "Phụ nữ Việt Nam", greeting: "Chúc bạn một ngày 20/10 thật rạng rỡ!", eyebrow: "NGÀY PHỤ NỮ VIỆT NAM · 20/10", accent: "#9b3c61", background: "#fbedf1", motif: "✿" },
+} satisfies Record<string, ThemePreset>;
+
+export const themes = {
   default: { title: "Mặc định", greeting: "Mì nóng, nước mát.", eyebrow: "BẾP MÌ XÀO · THỰC ĐƠN", accent: "#c54430", background: "", motif: "" },
   christmas: { title: "Noel", greeting: "Mùa vui, mì nóng hổi!", eyebrow: "MÙA NOEL ẤM ÁP · XÀO MÌ!", accent: "#226044", background: "#f0f5e9", motif: "❄" },
   "new-year": { title: "Tết Dương lịch", greeting: "Năm mới, ăn ngon nha!", eyebrow: "CHÀO NĂM MỚI · XÀO MÌ!", accent: "#3f477e", background: "#eeeff8", motif: "✦" },
   tet: { title: "Tết Nguyên đán", greeting: "Tết đủ đầy, mì đủ vị.", eyebrow: "TẾT ĐOÀN VIÊN · XÀO MÌ!", accent: "#b93226", background: "#fff2d3", motif: "✿" },
-};
+  ...holidayThemes,
+} satisfies Record<string, ThemePreset>;
+export type ThemeName = keyof typeof themes;
+export type HolidayTheme = keyof typeof holidayThemes;
+export const themeNames = Object.keys(themes) as ThemeName[];
+
+export function isHolidayTheme(theme: ThemeName): theme is HolidayTheme {
+  return Object.hasOwn(holidayThemes, theme);
+}
 
 export const formatPrice = (price: number) => `${new Intl.NumberFormat("vi-VN").format(price)} ₫`;
 
