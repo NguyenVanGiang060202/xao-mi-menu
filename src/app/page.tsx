@@ -12,7 +12,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const menu = getPublicMenu(store, Date.now());
   const { preview } = await searchParams;
   const name = preview === "noel" ? "christmas" : preview;
-  if (!name || !Object.hasOwn(themes, name)) return <MenuPage {...menu} />;
+  if (!name || !Object.hasOwn(themes, name)) return <MenuPage {...menu} trackTraffic={preview === undefined && process.env.VERCEL_ENV !== "preview"} />;
   const theme = name as ThemeName;
   const { title, greeting, accent, background } = themes[theme];
   const appearance = { ...menu.appearance, theme, greeting, accent, background, image: "" };

@@ -11,9 +11,18 @@ import { fetchBeMenu } from "@/lib/be-menu-sync";
 import { fetchGrabMenu } from "@/lib/grab-menu-sync";
 import { platformMenus, type Platform, type PlatformDraftDish } from "@/lib/catalog";
 import { themeNames } from "@/lib/menu-data";
+import { readMenuTracking } from "@/lib/menu-tracking";
+import { trackingPeriods } from "@/lib/tracking-data";
 
 async function requireAdmin() {
   if (!await isAdmin()) throw new Error("Bạn cần đăng nhập.");
+}
+
+export async function getMenuTracking(value: unknown) {
+  await requireAdmin();
+  const period = trackingPeriods.find((days) => days === value);
+  if (!period) throw new Error("Khoảng thời gian không hợp lệ.");
+  return readMenuTracking(period);
 }
 
 const syncTargetSchema = z.enum(["grab", "be", "xanh"]);

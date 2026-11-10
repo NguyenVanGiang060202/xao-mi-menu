@@ -2,7 +2,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, ImagePlus, LogOut, Menu, Monitor, Palette, Pencil, Plus, RefreshCw, Save, Smartphone, Trash2, Utensils } from "lucide-react";
+import { ArrowLeft, ChartNoAxesColumnIncreasing, Check, ImagePlus, LogOut, Menu, Monitor, Palette, Pencil, Plus, RefreshCw, Save, Smartphone, Trash2, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminToast, type AdminNotice, type NotifyAdmin } from "@/components/admin-toast";
 import { DishTag } from "@/components/dish-tag";
@@ -17,10 +17,12 @@ import type { PublicMenu } from "@/lib/public-menu";
 import { cancelSchedule, logout, syncBeToShop, updateSeasonSchedule, updateShop, updateShopMenu, updateTheme, uploadImage as uploadAsset } from "@/app/actions";
 import { PlatformMenuSync } from "./platform-menu-sync";
 import { AppearancePreview } from "./appearance-preview";
+import { AdminTracking } from "./admin-tracking";
 
 const sections = [
   { id: "appearance", label: "Giao diện", icon: Palette },
   { id: "menu", label: "Menu quán", icon: Menu },
+  { id: "tracking", label: "Thống kê", icon: ChartNoAxesColumnIncreasing },
 ] as const;
 
 type MenuDraft = { revision: string; original: Dish[]; dishes: Dish[] };
@@ -211,7 +213,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
       </nav>
 
       <div className="admin-content min-w-0">
-        {activeSection === "menu" ? <>
+        {activeSection === "tracking" ? <AdminTracking /> : activeSection === "menu" ? <>
           <PlatformMenuSync beMenu={store.beMenu} grabMenu={store.grabMenu} xanhMenu={store.xanhMenu} notify={notify} />
           <section className="admin-sheet">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

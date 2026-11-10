@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 
 import { ArrowUpRight, Clock3, CupSoda, Flame, Layers, MapPin, MessageCircle, Search, Soup, Utensils, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { SeasonGutterStickers, SeasonSticker } from "@/components/season-sticker
 import { StorefrontAwning } from "@/components/storefront-awning";
 import { formatPrice, getDishTags, themes, type Channel } from "@/lib/menu-data";
 import { channels, defaultShopSchedule, shopDays, shopLocation, type PlatformDraftDish as Dish, type Appearance, type ShopInfo, type Voucher } from "@/lib/catalog";
+import { trackingCategories, trackingMenuTabs, trackingScrollLevels, type TrackingEvent } from "@/lib/tracking-data";
 const channelNames: Record<Channel, string> = { shop: "Menu quán", grab: "GrabFood", be: "beFood", xanh: "Xanh SM Ngon" };
 const categoryIcons: Record<string, typeof Soup> = {
   Combo: Layers,
@@ -30,14 +31,34 @@ const channelStyles: Record<Channel, string> = {
 const zaloNumber = "0399944450";
 const zaloUrl = `https://zalo.me/${zaloNumber}`;
 
-export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Record<Channel, Dish[]>; appearance: Appearance; vouchers: { grab: Voucher[]; be: Voucher[] }; now: number; shop: ShopInfo }) {
+function sendMenuEvents(...events: TrackingEvent[]) {
+  const query = new URLSearchParams(events.map((event) => ["event", event]));
+  void fetch(`/api/menu-tracking?${query}`, { method: "POST", keepalive: true }).catch(() => {});
+}
+
+export function MenuPage({ menus, appearance, vouchers, now, shop, trackTraffic = false }: { menus: Record<Channel, Dish[]>; appearance: Appearance; vouchers: { grab: Voucher[]; be: Voucher[] }; now: number; shop: ShopInfo; trackTraffic?: boolean }) {
   const [channel, setChannel] = useState<Channel>("shop");
   const [category, setCategory] = useState("Tất cả");
   const [query, setQuery] = useState("");
   const [navigationStuck, setNavigationStuck] = useState(false);
   const navigationMarker = useRef<HTMLDivElement>(null);
+  const viewSent = useRef(false);
+  const lastSearch = useRef("");
+  const lastScrollLevel = useRef(0);
   const theme = appearance.theme;
   const schedule = shop.schedule ?? defaultShopSchedule;
+
+  useEffect(() => {
+    if (!trackTraffic || viewSent.current) return;
+    viewSent.current = true;
+    sendMenuEvents("view");
+  }, [trackTraffic]);
+
+  function trackLink(event: MouseEvent<HTMLAnchorElement>, ...events: TrackingEvent[]) {
+    if (trackTraffic && !event.defaultPrevented && (event.button === 0 || event.button === 1)) {
+      sendMenuEvents(...events);
+    }
+  }
 
   useEffect(() => {
     const marker = navigationMarker.current;
@@ -61,11 +82,60 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
     return matchesCategory && matchesQuery;
   }), [category, query, menu]);
 
+  const searchTerm = query.trim().toLocaleLowerCase("vi");
+  const hasSearchResults = visibleDishes.length > 0;
+  useEffect(() => {
+    if (!trackTraffic || searchTerm.length < 2 || searchTerm === lastSearch.current) return;
+    const timer = window.setTimeout(() => {
+      lastSearch.current = searchTerm;
+      sendMenuEvents(hasSearchResults ? `search_found_${channel}` : `search_empty_${channel}`);
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [channel, hasSearchResults, searchTerm, trackTraffic]);
+
+  const trackScroll = trackTraffic && category === "Tất cả" && !query && menu.length > 0;
+  useEffect(() => {
+    if (!trackScroll) return;
+    function recordScrollDepth() {
+      if (lastScrollLevel.current === 100) return;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll <= 0 || window.scrollY <= 0) return;
+      const percent = (window.scrollY + 1) / maxScroll * 100;
+      const crossed = trackingScrollLevels.filter((level) => level > lastScrollLevel.current && level <= percent);
+      if (!crossed.length) return;
+      lastScrollLevel.current = crossed[crossed.length - 1];
+      sendMenuEvents(...crossed.map((level) => `scroll_${level}` as const));
+    }
+    window.addEventListener("scroll", recordScrollDepth, { passive: true });
+    return () => window.removeEventListener("scroll", recordScrollDepth);
+  }, [trackScroll]);
+
   const themeInfo = themes[theme];
   const grouped = categories.slice(1).map((name) => ({ name, dishes: visibleDishes.filter((dish) => dish.category === name) })).filter((group) => group.dishes.length > 0);
 
-  function jumpToCategory(name: string) {
+  function selectCategory(name: string) {
+    if (trackTraffic && name !== category) {
+      const selected = trackingCategories.find(({ label }) => label === name)?.id ?? "other";
+      sendMenuEvents(`category_${channel}_${selected}`);
+    }
     setCategory(name);
+  }
+
+  function updateQuery(value: string) {
+    if (!value.trim()) lastSearch.current = "";
+    setQuery(value);
+  }
+
+  function selectChannel(next: Channel) {
+    if (trackTraffic && next !== channel) sendMenuEvents(`tab_${next}`);
+    setChannel(next);
+    setCategory("Tất cả");
+    updateQuery("");
+  }
+
+  function trackOrder(event: MouseEvent<HTMLAnchorElement>) {
+    if (channel === "shop") trackLink(event, "zalo", "zalo_navigation");
+    else trackLink(event, channel);
   }
 
   return (
@@ -105,6 +175,7 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
               </div>
             </div>
             <a href={shopLocation.mapsUrl} target="_blank" rel="noreferrer"
+              onClick={(event) => trackLink(event, "maps")} onAuxClick={(event) => trackLink(event, "maps")}
               className="menu-contact-action grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-1 rounded-[1.15rem] px-2.5 py-2 focus-visible:outline-2 focus-visible:-outline-offset-2">
               <MapPin size={18} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
               <span className="min-w-0 flex-1">
@@ -116,6 +187,8 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
               </span>
             </a>
             <a href={zaloUrl} target="_blank" rel="noreferrer"
+              onClick={(event) => trackLink(event, "zalo", "zalo_contact")}
+              onAuxClick={(event) => trackLink(event, "zalo", "zalo_contact")}
               className="menu-contact-action grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-1 rounded-[1.15rem] px-2.5 py-2 focus-visible:outline-2 focus-visible:-outline-offset-2">
               <MessageCircle size={18} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
               <span className="min-w-0">
@@ -136,22 +209,23 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
       <section className="menu-navigation sticky top-0 z-30" data-stuck={navigationStuck}>
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:gap-3" role="tablist" aria-label="Chọn nơi đặt món">
-            {(["shop", "grab", "be", "xanh"] as const).map((key) => <Button key={key} role="tab" aria-selected={channel === key} variant="ghost" onClick={() => { setChannel(key); setCategory("Tất cả"); setQuery(""); }} className={`menu-channel-tab ${channelStyles[key]} h-11 flex-1 rounded-xl px-2 text-xs font-bold sm:flex-none sm:px-5 sm:text-sm`}><span>{channelNames[key]}</span></Button>)}
+            {trackingMenuTabs.map(({ id: key }) => <Button key={key} role="tab" aria-selected={channel === key} variant="ghost" onClick={() => selectChannel(key)} className={`menu-channel-tab ${channelStyles[key]} h-11 flex-1 rounded-xl px-2 text-xs font-bold sm:flex-none sm:px-5 sm:text-sm`}><span>{channelNames[key]}</span></Button>)}
           </div>
           <a href={channel === "shop" ? zaloUrl : channels[channel].url} target="_blank" rel="noreferrer"
+            onClick={trackOrder} onAuxClick={trackOrder}
             className={`menu-channel-cta ${channelStyles[channel]} inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold`}>
             <span key={channel} className="menu-cta-label">{channel === "shop" ? "Đặt qua Zalo" : `Đặt qua ${channelNames[channel]}`}</span><ArrowUpRight size={16} aria-hidden="true" />
           </a>
         </div>
         {menu.length > 0 && <nav className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-3 sm:px-8" aria-label="Danh mục món">
-          {categories.map((item) => <Button key={item} variant="ghost" aria-pressed={category === item} onClick={() => jumpToCategory(item)} className={`menu-filter h-8 shrink-0 rounded-full border px-3 text-xs font-semibold ${category === item ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "border-border bg-card text-muted-foreground hover:bg-secondary"}`}><span>{item}</span></Button>)}
+          {categories.map((item) => <Button key={item} variant="ghost" aria-pressed={category === item} onClick={() => selectCategory(item)} className={`menu-filter h-8 shrink-0 rounded-full border px-3 text-xs font-semibold ${category === item ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "border-border bg-card text-muted-foreground hover:bg-secondary"}`}><span>{item}</span></Button>)}
         </nav>}
       </section>
 
       <div key={channel} className="menu-content mx-auto max-w-6xl px-4 sm:px-8">
         <section className="flex flex-col gap-2 pt-3 pb-1 sm:flex-row sm:items-center sm:gap-4 sm:pt-4">
           <h2 className={`menu-channel-heading ${channelStyles[channel]} text-2xl font-extrabold sm:text-3xl`}>{channelNames[channel]}</h2>
-          {menu.length > 0 && <label className="menu-search flex h-11 w-full items-center gap-2 rounded-full border border-border bg-card px-4 text-muted-foreground sm:max-w-[290px]"><Search size={17} aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm món bạn thích..." className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground" aria-label="Tìm món" />{query && <Button variant="ghost" size="icon" className="size-8" onClick={() => setQuery("")} aria-label="Xóa tìm kiếm"><X size={15} /></Button>}</label>}
+          {menu.length > 0 && <label className="menu-search flex h-11 w-full items-center gap-2 rounded-full border border-border bg-card px-4 text-muted-foreground sm:max-w-[290px]"><Search size={17} aria-hidden="true" /><input value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="Tìm món bạn thích..." className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground" aria-label="Tìm món" />{query && <Button variant="ghost" size="icon" className="size-8" onClick={() => updateQuery("")} aria-label="Xóa tìm kiếm"><X size={15} /></Button>}</label>}
         </section>
 
         <div key={category} className="menu-board">
@@ -164,9 +238,9 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
           </div>
           <SeasonSticker theme={theme} category={group.name} movable />
           <div className="menu-category-items grid sm:grid-cols-2">
-            {group.dishes.map(dish => <DishRow key={dish.id} dish={dish} channel={channel} />)}
+            {group.dishes.map(dish => <DishRow key={dish.id} dish={dish} channel={channel} onPriceClick={(event) => trackLink(event, "grab_price")} />)}
           </div>
-        </section>) : <div className="mb-8 rounded-3xl border border-dashed border-primary/25 bg-card py-12 text-center text-sm text-muted-foreground">{menu.length ? "Chưa tìm thấy món phù hợp." : "Menu quán đang được cập nhật."}{!menu.length && <div className="mt-3 flex justify-center gap-3"><Button variant="outline" onClick={() => setChannel("grab")}>Xem menu GrabFood</Button><Button variant="outline" onClick={() => setChannel("be")}>Xem menu beFood</Button></div>}</div>}
+        </section>) : <div className="mb-8 rounded-3xl border border-dashed border-primary/25 bg-card py-12 text-center text-sm text-muted-foreground">{menu.length ? "Chưa tìm thấy món phù hợp." : "Menu quán đang được cập nhật."}{!menu.length && <div className="mt-3 flex justify-center gap-3"><Button variant="outline" onClick={() => selectChannel("grab")}>Xem menu GrabFood</Button><Button variant="outline" onClick={() => selectChannel("be")}>Xem menu beFood</Button></div>}</div>}
 
         {activeVouchers.length > 0 && <section className="mb-6 rounded border border-border p-4"><h3 className="font-bold">Voucher</h3><ul>{activeVouchers.map(voucher => <li key={voucher.title + voucher.code} className="mt-2 text-sm">{voucher.title} {voucher.code && <strong>{voucher.code}</strong>} · {voucher.terms}</li>)}</ul></section>}
         </div>
@@ -175,7 +249,7 @@ export function MenuPage({ menus, appearance, vouchers, now, shop }: { menus: Re
   );
 }
 
-function DishRow({ dish, channel }: { dish: Dish; channel: Channel }) {
+function DishRow({ dish, channel, onPriceClick }: { dish: Dish; channel: Channel; onPriceClick: (event: MouseEvent<HTMLAnchorElement>) => void }) {
   const { price } = dish;
   const discount = channel !== "shop" && dish.originalPrice !== undefined && price !== null ? dish.originalPrice - price : 0;
   return <article data-available={dish.available} className={`menu-dish flex min-h-[114px] min-w-0 w-full items-center gap-3 overflow-hidden rounded-xl border-b border-border px-1 py-3 text-left sm:gap-4 ${dish.available ? "" : "opacity-55"}`}>
@@ -189,7 +263,7 @@ function DishRow({ dish, channel }: { dish: Dish; channel: Channel }) {
       <DishTags dish={dish} />
       {(dish.description || dish.ingredients) && <span className="mt-1 text-xs font-normal leading-5 text-muted-foreground">{dish.description || dish.ingredients}</span>}
       <span className="mt-2 flex flex-wrap items-baseline gap-x-2 text-base font-bold tabular-nums text-foreground">
-        {price === null ? <a href={channels.grab.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded text-xs text-muted-foreground underline underline-offset-2 focus-visible:outline-2">
+        {price === null ? <a href={channels.grab.url} target="_blank" rel="noreferrer" onClick={onPriceClick} onAuxClick={onPriceClick} className="inline-flex items-center gap-1 rounded text-xs text-muted-foreground underline underline-offset-2 focus-visible:outline-2">
           Xem giá trên GrabFood <ArrowUpRight size={13} aria-hidden="true" />
         </a> : formatPrice(price)}
         {discount > 0 && dish.originalPrice !== undefined && <span className="text-xs font-medium text-muted-foreground line-through">{formatPrice(dish.originalPrice)}</span>}
