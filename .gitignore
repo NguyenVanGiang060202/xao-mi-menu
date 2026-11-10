@@ -1,0 +1,17 @@
+# Local configuration and credentials
+.env*
+!.env.example
+.vercel/
+*.pem
+*.key
+
+# Dependencies and build output
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Local logs
+*.log
+.neon

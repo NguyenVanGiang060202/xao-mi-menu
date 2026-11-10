@@ -1,0 +1,126 @@
+[
+  {
+    "id": "VNITE2026111005100173612",
+    "name": "Mì trộn trứng xúc xích + nước",
+    "category": "Combo",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026111005100173612/photo/menueditor_item_d9d32eecd9c24743824ea23d1bcf97c0_1794287472551407670.webp",
+    "price": 65000
+  },
+  {
+    "id": "VNITE2026110916471419899",
+    "name": "Mì xào trứng xúc xích + nước",
+    "price": 76500,
+    "category": "Combo",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026110916471419899/photo/menueditor_item_c8b9cfacef1a493484850d3be0edc53f_1794242762134371827.webp",
+    "originalPrice": 85000
+  },
+  {
+    "id": "VNITE2026110112031868425",
+    "name": "Mì xào bò trứng + nước",
+    "price": 81000,
+    "category": "Combo",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026110112031868425/photo/menueditor_item_de447e863ae04b1e80ddd314fe0ed50c_1793534572071354705.webp",
+    "originalPrice": 90000
+  },
+  {
+    "id": "VNITE2026110112020890040",
+    "name": "Mì xào bò + súp",
+    "price": 76500,
+    "category": "Combo",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026110112020890040/photo/menueditor_item_460733fe93d24a48a94178152bcdedb8_1793534428889353377.webp",
+    "originalPrice": 85000
+  },
+  {
+    "id": "VNITE2026110715521161953",
+    "name": "Mì xào trứng xúc xích",
+    "price": 65000,
+    "category": "Mì xào",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026110715521161953/photo/menueditor_item_eee2165d92254cf4b7062aa46962b9f0_1794204989860725754.webp"
+  },
+  {
+    "id": "VNITE2026102204362582807",
+    "name": "Mì xào bò trứng",
+    "price": 75000,
+    "category": "Mì xào",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026102204362582807/photo/menueditor_item_1c8bd47ec63847c3a6784df096d613e4_1792927087863324878.webp"
+  },
+  {
+    "id": "VNITE2026102204315700098",
+    "name": "Mì xào bò",
+    "price": 70000,
+    "category": "Mì xào",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026102204315700098/photo/menueditor_item_c31ab9e9579748aaa14ea24288d982d5_1792927394581828631.webp",
+    "tag": "Bán chạy"
+  },
+  {
+    "id": "VNITE2026110715565290474",
+    "name": "Mì trộn trứng xúc xích",
+    "price": 65000,
+    "category": "Mì trộn",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026110715565290474/photo/menueditor_item_6717e279c6ad48f59197f6767dfbd162_1794204810484168403.webp"
+  },
+  {
+    "id": "VNITE2026110715555767547",
+    "name": "Mì trộn bò trứng",
+    "price": 75000,
+    "category": "Mì trộn",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026110715555767547/photo/menueditor_item_42274c643b5c4778a785c09d976e81ec_1794204932172269344.webp"
+  },
+  {
+    "id": "VNITE2026110113254957877",
+    "name": "Pepsi ly",
+    "price": 20000,
+    "category": "Đồ uống",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026110113254957877/photo/menueditor_item_f93b0b3bc16745d8a442a3ac5d6b6887_1793539514377501480.webp"
+  },
+  {
+    "id": "VNITE2026102805025975169",
+    "name": "Trà đào",
+    "price": 20000,
+    "category": "Đồ uống",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026102805025975169/photo/menueditor_item_8f5f6a8886af431a8ff6d091070d926e_1793163728602863453.webp"
+  },
+  {
+    "id": "VNITE2026102805014374851",
+    "name": "Trà chanh",
+    "price": 20000,
+    "category": "Đồ uống",
+    "available": true,
+    "description": "",
+    "ingredients": "",
+    "image": "https://huawei-food-cms.grab.com/compressed_webp/items/VNITE2026102805014374851/photo/menueditor_item_cffb8821d5dd49e6b8f4785fd8d469dc_1793163597876061948.webp"
+  }
+]

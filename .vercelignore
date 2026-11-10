@@ -1,0 +1,6 @@
+.env*
+.neon
+.vercel/
+*.pem
+*.key
+*.log

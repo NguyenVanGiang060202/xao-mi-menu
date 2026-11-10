@@ -1,0 +1,145 @@
+[
+  {
+    "id": "14172598",
+    "name": "Mì trộn trứng, xúc xích + nước",
+    "category": "Combo",
+    "price": 75000,
+    "originalPrice": 75000,
+    "image": "https://media.be.com.vn/be-food/image/11f9c538-dc64-11f1-8d18-dadbc64f7918/resized_thumbnail_w480_h480",
+    "description": "Mì gói, trứng, xúc xích, hành lá, cải ngọt, cà rốt, nước giải khát",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172596",
+    "name": "Mì trộn bò, trứng + nước",
+    "category": "Combo",
+    "price": 65000,
+    "originalPrice": 65000,
+    "image": "https://media.be.com.vn/be-food/image/ae9b2378-dc63-11f1-8db8-3e6660809d72/resized_thumbnail_w480_h480",
+    "description": "Mì gói, thịt bò, trứng, hành lá, cải ngọt, cà rốt, nước giải khát",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172588",
+    "name": "Mì xào trứng, xúc xích + nước",
+    "category": "Combo",
+    "price": 75000,
+    "originalPrice": 75000,
+    "image": "https://media.be.com.vn/be-food/image/4e2703f4-dc63-11f1-8d18-dadbc64f7918/resized_thumbnail_w480_h480",
+    "description": "Mì gói, trứng, xúc xích, hành lá, cải ngọt, cà rốt, nước giải khát",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172582",
+    "name": "Mì xào bò, trứng + nước",
+    "category": "Combo",
+    "price": 85000,
+    "originalPrice": 85000,
+    "image": "https://media.be.com.vn/be-food/image/d41a5459-dc62-11f1-ad42-166496a6b8bb/resized_thumbnail_w480_h480",
+    "description": "Mì gói, thịt bò, trứng, hành lá, cải ngọt, cà rốt, nước giải khát",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172576",
+    "name": "Mì xào bò + nước",
+    "category": "Combo",
+    "price": 80000,
+    "originalPrice": 80000,
+    "image": "https://media.be.com.vn/be-food/image/57846762-dc62-11f1-8683-3a351028b633/resized_thumbnail_w480_h480",
+    "description": "Mì gói, thịt bò, hành lá, cải ngọt, cà rốt, nước giải khát",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172556",
+    "name": "Mì xào trứng, xúc xích",
+    "category": "Mì xào",
+    "price": 55000,
+    "originalPrice": 55000,
+    "image": "https://media.be.com.vn/be-food/image/61a7446c-dc61-11f1-8683-3a351028b633/resized_thumbnail_w480_h480",
+    "description": "Mì gói, trứng, xúc xích, hành lá, cải ngọt, cà rốt",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172544",
+    "name": "Mì xào bò trứng",
+    "category": "Mì xào",
+    "price": 65000,
+    "originalPrice": 65000,
+    "image": "https://media.be.com.vn/be-food/image/f493e075-dc60-11f1-8d18-dadbc64f7918/resized_thumbnail_w480_h480",
+    "description": "Mì gói, Thịt bò, trứng, hành, cải, cà rốt",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172525",
+    "name": "Mì xào Bò",
+    "category": "Mì xào",
+    "price": 60000,
+    "originalPrice": 60000,
+    "image": "https://media.be.com.vn/be-food/image/92cd86b5-dc60-11f1-8db8-3e6660809d72/resized_thumbnail_w480_h480",
+    "description": "Mì gói, thịt bò, hành lá, cải ngọt, cà rốt",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172570",
+    "name": "Mì trộn trứng, xúc xích",
+    "category": "Mì trộn",
+    "price": 55000,
+    "originalPrice": 55000,
+    "image": "https://media.be.com.vn/be-food/image/f8422d98-dc61-11f1-8683-3a351028b633/resized_thumbnail_w480_h480",
+    "description": "Mì gói, trứng, xúc xích, hành lá, cải ngọt, cà rốt",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172563",
+    "name": "Mì trộn bò trứng",
+    "category": "Mì trộn",
+    "price": 65000,
+    "originalPrice": 65000,
+    "image": "https://media.be.com.vn/be-food/image/c59ed951-dc61-11f1-8db8-3e6660809d72/resized_thumbnail_w480_h480",
+    "description": "Mì gói, trứng, thịt, hành lá, cải ngọt, cà rốt",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172606",
+    "name": "Pepsi",
+    "category": "Đồ uống",
+    "price": 20000,
+    "originalPrice": 20000,
+    "image": "https://media.be.com.vn/be-food/image/5ea8c036-dc64-11f1-8db8-3e6660809d72/resized_thumbnail_w480_h480",
+    "description": "",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172604",
+    "name": "Trà đào",
+    "category": "Đồ uống",
+    "price": 20000,
+    "originalPrice": 20000,
+    "image": "https://media.be.com.vn/be-food/image/47dc888d-dc64-11f1-8d18-dadbc64f7918/resized_thumbnail_w480_h480",
+    "description": "",
+    "ingredients": "",
+    "available": true
+  },
+  {
+    "id": "14172600",
+    "name": "Trà chanh",
+    "category": "Đồ uống",
+    "price": 20000,
+    "originalPrice": 20000,
+    "image": "https://media.be.com.vn/be-food/image/31820c2e-dc64-11f1-8d18-dadbc64f7918/resized_thumbnail_w480_h480",
+    "description": "",
+    "ingredients": "",
+    "available": true
+  }
+]
