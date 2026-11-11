@@ -9,9 +9,10 @@ import type { NotifyAdmin } from "@/components/admin-toast";
 import { platformMenus, type Platform, type PlatformDraftDish } from "@/lib/catalog";
 import { formatPrice } from "@/lib/menu-data";
 import type { PlatformSnapshots } from "@/lib/store";
+import { GrabConnection } from "./grab-connection";
 
 const platformHelp: Record<Platform, string> = {
-  grab: "Đối chiếu beFood để sửa tên và bổ sung món thiếu. Món bổ sung có nhãn nguồn và liên kết beFood.",
+  grab: "Khi đã kết nối, lấy tiếng Việt và giá gốc từ GrabFood. Món thiếu được bổ sung từ beFood và có nhãn nguồn.",
   be: "Lấy dữ liệu từ gian hàng beFood.",
   xanh: "Lấy danh sách từ beFood và công bố riêng cho tab Xanh SM Ngon.",
 };
@@ -22,6 +23,7 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
   const [loading, setLoading] = useState<Platform | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [review, setReview] = useState<Review | null>(null);
+  const [reconnectRequired, setReconnectRequired] = useState(false);
   const busy = Boolean(loading) || publishing;
   const previewDishes = review?.dishes ?? [];
   const supplementedCount = previewDishes.filter(dish => dish.supplementedFrom).length;
@@ -38,7 +40,10 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
       if (result.ok) {
         setReview({ ...result, platform });
         notify(`Đã tải ${result.dishes.length} món. Xem lại trước khi công bố.`, "success");
-      } else notify(result.message, "error");
+      } else {
+        if (result.needsGrabConnection) setReconnectRequired(true);
+        notify(result.message, "error");
+      }
     } catch {
       notify("Không tải được thực đơn. Hãy thử lại.", "error");
     } finally {
@@ -51,6 +56,7 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
     setPublishing(true);
     try {
       const result = await confirmPlatformMenu({ platform: review.platform, previousSync: review.previousSync, digest: review.digest });
+      if (!result.ok && result.needsGrabConnection) setReconnectRequired(true);
       notify(result.message, result.ok ? "success" : "error");
       if (result.ok) {
         setReview(null);
@@ -66,6 +72,8 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
   return <section className="admin-sheet">
     <h3 className="mb-3">Thực đơn trên nền tảng</h3>
     <p className="mb-3 text-sm text-muted-foreground">Duyệt và công bố riêng cho từng tab đặt món.</p>
+    <GrabConnection disabled={busy} reconnectRequired={reconnectRequired} notify={notify}
+      onChange={() => { setReconnectRequired(false); setReview(null); router.refresh(); }} />
     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
       {(Object.keys(platformMenus) as Platform[]).map(platform => {
         const { label, key } = platformMenus[platform];
@@ -89,6 +97,11 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
         {previewDishes.length} món
         {review.platform === "grab" && ` · ${previewDishes.length - supplementedCount} món từ GrabFood · ${supplementedCount} món bổ sung từ beFood`}
       </p>
+      {review.platform === "grab" && <p className="mt-1 text-xs text-muted-foreground">
+        {previewDishes.some(dish => dish.textSource === "grab")
+          ? "Đã lấy tên, mô tả và giá tiếng Việt gốc từ phiên GrabFood."
+          : "Nguồn công khai dự phòng. Kết nối GrabFood để lấy dữ liệu tiếng Việt gốc."}
+      </p>}
       <div className="mt-4 space-y-5">
         {[...groups].map(([category, dishes]) => <section key={category}>
           <h5 className="mb-2 text-sm font-bold">{category} <span className="ml-1 font-normal text-muted-foreground">· {dishes.length} món</span></h5>
@@ -97,6 +110,7 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
               {dish.image ? <img src={dish.image} alt="" loading="lazy" className="size-16 shrink-0 rounded-lg object-cover" /> : <span className="grid size-16 shrink-0 place-items-center rounded-lg bg-secondary text-center text-[10px] text-muted-foreground">Chưa có ảnh</span>}
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold">{dish.name}</p>
+                {dish.description && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{dish.description}</p>}
                 {dish.supplementedFrom && <p className="mt-1 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">Bổ sung từ beFood</p>}
                 {!dish.available && <p className="mt-1 text-xs text-muted-foreground">Tạm hết</p>}
                 {dish.price === null ? <p className="mt-1 text-xs text-muted-foreground">{dish.supplementedFrom ? "Chưa có giá GrabFood" : "Xem giá trên GrabFood"}</p>

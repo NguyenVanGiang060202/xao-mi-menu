@@ -8,7 +8,7 @@ export const platformMenus = {
   xanh: { label: "Xanh SM Ngon", key: "xanhMenu" },
 } as const;
 export type Platform = keyof typeof platformMenus;
-export type PlatformDraftDish = Omit<MenuDish, "price"> & { price: number | null; supplementedFrom?: "be" };
+export type PlatformDraftDish = Omit<MenuDish, "price"> & { price: number | null; supplementedFrom?: "be"; textSource?: "grab" };
 
 const grabVietnameseNames: Record<string, string> = {
   "noodles mixed with egg, sausage + drink": "Mì trộn trứng xúc xích + nước",
@@ -37,6 +37,9 @@ const grabVietnameseCategories: Record<string, string> = {
   "mixed noodles": "Mì trộn",
   "beverage": "Đồ uống",
   "best-selling combo": "Combo bán chạy",
+  "mì xào": "Mì xào",
+  "mì trộn": "Mì trộn",
+  "nước giải khát": "Đồ uống",
 };
 
 export function dishNameKey(name: string) {
@@ -46,11 +49,12 @@ export function dishNameKey(name: string) {
 
 type DishText = Pick<PlatformDraftDish, "name" | "description">;
 
-export function localizeGrabDish<T extends DishText & { category: string }>(dish: T, beDishes: readonly DishText[] = []): T {
+export function localizeGrabDish<T extends DishText & { category: string; textSource?: "grab" }>(dish: T, beDishes: readonly DishText[] = []): T {
+  const category = grabVietnameseCategories[dish.category.trim().toLowerCase()] ?? dish.category;
+  if (dish.textSource === "grab") return { ...dish, category };
   const translatedName = grabVietnameseNames[dish.name.trim().toLowerCase()];
   const name = translatedName ?? dish.name;
   const reference = beDishes.find(candidate => dishNameKey(candidate.name) === dishNameKey(name));
-  const category = grabVietnameseCategories[dish.category.trim().toLowerCase()] ?? dish.category;
   return {
     ...dish, category,
     name: reference?.name.trim() ?? name,

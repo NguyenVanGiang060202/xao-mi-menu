@@ -27,7 +27,7 @@ export async function readStore(): Promise<Store> {
 export async function readStoreWithMenuRevision(): Promise<{ store: Store; menuRevision: string }> {
   if (!process.env.DATABASE_URL) return { store: defaults, menuRevision: "" };
   const sql = database();
-  const [row] = await sql`SELECT data, md5(NULLIF(data->'dishes', 'null'::jsonb)::text) AS revision FROM menu_state WHERE id = 1`;
+  const [row] = await sql`SELECT data - 'grabConnection' AS data, md5(NULLIF(data->'dishes', 'null'::jsonb)::text) AS revision FROM menu_state WHERE id = 1`;
   const store: Store = { ...defaults, ...row?.data };
   const dishes = (store.dishes ?? defaults.dishes).map(dish => ({
     ...dish,

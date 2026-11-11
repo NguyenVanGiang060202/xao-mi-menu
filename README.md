@@ -24,6 +24,14 @@ Website đặt món của quán cần team Vercel Pro hoặc Enterprise theo [qu
 5. Chạy `pnpm dlx vercel deploy --prod`. Mở URL `vercel.app` để kiểm tra trang khách và đăng nhập `/admin`. Mục **Giao diện → Lên lịch theo mùa** hiển thị các lịch đã lưu theo giờ Việt Nam.
 6. Khi có tên miền riêng, thêm trong **Settings → Domains** của project rồi trỏ DNS theo hướng dẫn Vercel.
 
+## Kết nối đồng bộ GrabFood
+
+Trong **Admin → Menu quán → Kết nối GrabFood**, dán cURL của request `v2/order/merchants/5-C8KGJLKAN3UEEE` sau khi đăng nhập GrabFood bằng Google và chọn Tiếng Việt. Bấm **Kết nối và lưu** để kiểm tra nguồn trước khi lưu phiên.
+
+Phiên được mã hóa AES-256-GCM trong Neon, dùng khóa dẫn xuất từ `AUTH_SECRET`. Cấu hình này dùng chung cho local và production đang trỏ cùng cơ sở dữ liệu. Đổi `AUTH_SECRET` sẽ cần kết nối GrabFood lại. Mỗi lần Đồng bộ lấy lại access token qua `/auth/access-token`, sau đó lấy tên, mô tả và giá gốc từ GrabFood. Token thiết bị Hydra vẫn thuộc phiên trình duyệt được cung cấp. Khi Grab từ chối phiên, admin yêu cầu cập nhật cURL.
+
+Chỉ cookie xác thực cần thiết và token thiết bị được giữ lại. Phiên được loại khỏi dữ liệu đưa ra giao diện. Kết nối không công bố thực đơn. Bản đồng bộ vẫn cần được duyệt trước khi lưu, và lỗi xác thực giữ nguyên menu đã công bố.
+
 ## Thống kê trang khách
 
 Trong `/admin → Thống kê`, chọn 7, 30 hoặc 90 ngày để xem lượt mở thực đơn và lượt bấm đặt món qua Zalo, GrabFood, beFood và Xanh SM Ngon. Số liệu được cộng theo ngày Việt Nam từ lúc bật tính năng. Lượt bấm đo thao tác mở kênh đặt món.

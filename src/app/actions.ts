@@ -8,7 +8,8 @@ import { z } from "zod";
 import { cookieName, equal, isAdmin, signSession } from "@/lib/admin-auth";
 import { changeSeasonSchedule, publishAppearance, publishPlatformMenu, readStore, saveShopDishChanges, saveValue, syncBeShopDishes } from "@/lib/store";
 import { fetchBeMenu } from "@/lib/be-menu-sync";
-import { fetchGrabMenu } from "@/lib/grab-menu-sync";
+import { fetchGrabMenu, verifyGrabSession } from "@/lib/grab-menu-sync";
+import { clearGrabConnection, grabConnectionStatus, GrabSessionError, GrabSyncError, parseGrabCurl, saveGrabConnection } from "@/lib/grab-connection";
 import { platformMenus, type Platform, type PlatformDraftDish } from "@/lib/catalog";
 import { themeNames } from "@/lib/menu-data";
 import { readMenuTracking } from "@/lib/menu-tracking";
@@ -23,6 +24,37 @@ export async function getMenuTracking(value: unknown) {
   const period = trackingPeriods.find((days) => days === value);
   if (!period) throw new Error("Khoảng thời gian không hợp lệ.");
   return readMenuTracking(period);
+}
+
+export async function getGrabConnectionStatus() {
+  await requireAdmin();
+  return grabConnectionStatus();
+}
+
+export async function connectGrabFood(value: unknown) {
+  await requireAdmin();
+  if (typeof value !== "string") return { ok: false as const, message: "Dán cURL của request menu GrabFood." };
+  try {
+    const { session, dishes } = await verifyGrabSession(parseGrabCurl(value));
+    if (!await saveGrabConnection(session)) throw new Error("Connection was not saved");
+    revalidatePath("/admin");
+    return {
+      ok: true as const, connection: await grabConnectionStatus(),
+      message: `Đã kết nối GrabFood và xác nhận ${dishes.length} món với tên, mô tả và giá gốc.`,
+    };
+  } catch (error) {
+    return {
+      ok: false as const,
+      message: error instanceof GrabSyncError ? error.message : "Không kết nối được GrabFood. Kiểm tra cURL, kết nối mạng và cấu hình lưu phiên rồi thử lại.",
+    };
+  }
+}
+
+export async function disconnectGrabFood() {
+  await requireAdmin();
+  await clearGrabConnection();
+  revalidatePath("/admin");
+  return { ok: true as const, message: "Đã ngắt kết nối phiên GrabFood." };
 }
 
 const syncTargetSchema = z.enum(["grab", "be", "xanh"]);
@@ -46,8 +78,12 @@ export async function previewPlatformMenu(value: unknown) {
     const dishes = await fetchPlatformMenu(platform, store.beMenu?.dishes);
     const published = store[platformMenus[platform].key];
     return { ok: true as const, dishes, digest: menuDigest(dishes), previousSync: published?.syncedAt ?? "", canPublish };
-  } catch {
-    return { ok: false as const, message: "Không lấy được thực đơn mới. Hãy thử lại." };
+  } catch (error) {
+    return {
+      ok: false as const,
+      needsGrabConnection: error instanceof GrabSessionError,
+      message: error instanceof GrabSyncError ? error.message : "Không lấy được thực đơn mới. Hãy thử lại.",
+    };
   }
 }
 
@@ -80,7 +116,15 @@ export async function confirmPlatformMenu(value: unknown) {
   if (!parsed.success) return { ok: false, message: "Bản duyệt không hợp lệ. Hãy đồng bộ lại." };
   const { platform, digest, previousSync } = parsed.data;
   const store = await readStore();
-  const dishes = await fetchPlatformMenu(platform, store.beMenu?.dishes);
+  let dishes: PlatformDraftDish[];
+  try {
+    dishes = await fetchPlatformMenu(platform, store.beMenu?.dishes);
+  } catch (error) {
+    return {
+      ok: false, needsGrabConnection: error instanceof GrabSessionError,
+      message: error instanceof GrabSyncError ? error.message : "Không lấy được thực đơn để công bố. Hãy thử lại.",
+    };
+  }
   if (menuDigest(dishes) !== digest) {
     return { ok: false, message: "Thực đơn trên nền tảng đã thay đổi. Hãy bỏ bản duyệt và đồng bộ lại." };
   }
