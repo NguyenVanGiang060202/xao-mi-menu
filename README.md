@@ -28,7 +28,7 @@ Website đặt món của quán cần team Vercel Pro hoặc Enterprise theo [qu
 
 Trong **Admin → Menu quán → Kết nối GrabFood**, dán cURL của request `v2/order/merchants/5-C8KGJLKAN3UEEE` sau khi đăng nhập GrabFood bằng Google và chọn Tiếng Việt. Bấm **Kết nối và lưu** để kiểm tra nguồn trước khi lưu phiên.
 
-Phiên được mã hóa AES-256-GCM trong Neon, dùng khóa dẫn xuất từ `AUTH_SECRET`. Cấu hình này dùng chung cho local và production đang trỏ cùng cơ sở dữ liệu. Đổi `AUTH_SECRET` sẽ cần kết nối GrabFood lại. Mỗi lần Đồng bộ lấy lại access token qua `/auth/access-token`, sau đó lấy tên, mô tả và giá gốc từ GrabFood. Token thiết bị Hydra vẫn thuộc phiên trình duyệt được cung cấp. Khi Grab từ chối phiên, admin yêu cầu cập nhật cURL.
+Phiên được mã hóa AES-256-GCM trong Neon, dùng khóa dẫn xuất từ `GRAB_SESSION_SECRET` (tối thiểu 32 ký tự; nếu chưa đặt thì dùng `AUTH_SECRET`). Các môi trường dùng chung cơ sở dữ liệu phải đặt cùng `GRAB_SESSION_SECRET`, kể cả khi khóa đăng nhập admin khác nhau. Lưu biến này dưới dạng Sensitive trên Vercel, không đặt tiền tố `NEXT_PUBLIC_`. Đổi khóa mã hóa sẽ cần kết nối GrabFood lại. Mỗi lần Đồng bộ lấy lại access token qua `/auth/access-token`, sau đó lấy tên, mô tả và giá gốc từ GrabFood. Token thiết bị Hydra vẫn thuộc phiên trình duyệt được cung cấp. Khi Grab từ chối phiên, admin yêu cầu cập nhật cURL.
 
 Chỉ cookie xác thực cần thiết và token thiết bị được giữ lại. Phiên được loại khỏi dữ liệu đưa ra giao diện. Kết nối không công bố thực đơn. Bản đồng bộ vẫn cần được duyệt trước khi lưu, và lỗi xác thực giữ nguyên menu đã công bố.
 

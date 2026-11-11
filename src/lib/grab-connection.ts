@@ -24,8 +24,8 @@ export class GrabSyncError extends Error {}
 export class GrabSessionError extends GrabSyncError {}
 
 function key() {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret || secret.length < 32) throw new Error("Cần cấu hình AUTH_SECRET tối thiểu 32 ký tự.");
+  const secret = process.env.GRAB_SESSION_SECRET || process.env.AUTH_SECRET;
+  if (!secret || secret.length < 32) throw new Error("Cần cấu hình GRAB_SESSION_SECRET hoặc AUTH_SECRET tối thiểu 32 ký tự.");
   return createHash("sha256").update(secret + ":grab-connection:v1").digest();
 }
 
