@@ -2,7 +2,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChartNoAxesColumnIncreasing, Check, ImagePlus, LogOut, Menu, Monitor, Palette, Pencil, Plus, RefreshCw, Save, Smartphone, Trash2, Utensils } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, ChartNoAxesColumnIncreasing, Check, ImagePlus, LogOut, Menu, Monitor, Palette, Pencil, Plus, RefreshCw, Save, Smartphone, Trash2, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminToast, type AdminNotice, type NotifyAdmin } from "@/components/admin-toast";
 import { DishTag } from "@/components/dish-tag";
@@ -10,7 +10,8 @@ import { SeasonSticker } from "@/components/season-sticker";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { categories, dishTagPresets, formatPrice, getDishTags, parseVietnamDateTime, themeNames, themes, type ThemeName } from "@/lib/menu-data";
+import { dishTagPresets, formatPrice, getDishTags, parseVietnamDateTime, themeNames, themes, type ThemeName } from "@/lib/menu-data";
+import { groupMenu } from "@/lib/menu-order";
 import { defaultShopSchedule, shopDays, shopLocation, type Appearance, type MenuDish as Dish } from "@/lib/catalog";
 import type { Store } from "@/lib/store";
 import type { PublicMenu } from "@/lib/public-menu";
@@ -18,6 +19,7 @@ import { cancelSchedule, logout, syncBeToShop, updateSeasonSchedule, updateShop,
 import { PlatformMenuSync } from "./platform-menu-sync";
 import { AppearancePreview } from "./appearance-preview";
 import { AdminTracking } from "./admin-tracking";
+import { ShopMenuOrder } from "./shop-menu-order";
 
 const sections = [
   { id: "appearance", label: "Giao diện", icon: Palette },
@@ -47,6 +49,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
   const [syncingShop, setSyncingShop] = useState(false);
   const [savingMenu, setSavingMenu] = useState(false);
   const [menuDraft, setMenuDraft] = useState<MenuDraft | null>(null);
+  const [reordering, setReordering] = useState(false);
   const [editingSeason, setEditingSeason] = useState<{ start: number; end: number; originalAppearance: Appearance } | null>(null);
   const [activeSection, setActiveSection] = useState<(typeof sections)[number]["id"]>("appearance");
   const [editingDish, setEditingDish] = useState<Dish | null>(null);
@@ -57,9 +60,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
   const parsedPrice = /^\d+(?:\.\d{0,3})?$/.test(priceText) ? Math.round(Number(priceText) * 1000) : NaN;
   const dishPrice = Number.isSafeInteger(parsedPrice) && parsedPrice <= 100000000 ? parsedPrice : null;
   const menuDishes = menuDraft?.dishes ?? store.dishes;
-  const dishGroups = [...new Set([...categories.slice(1), ...menuDishes.map(dish => dish.category)])]
-    .map(category => ({ category, dishes: menuDishes.filter(dish => dish.category === category) }))
-    .filter(group => group.dishes.length);
+  const dishGroups = groupMenu(menuDishes);
   const appearance = { theme, greeting, accent, background, image: headerImage, logo };
   const menuBusy = busy || syncingShop || savingMenu;
 
@@ -108,6 +109,14 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
     });
   }
 
+  function stageOrder(dishes: Dish[]) {
+    setMenuDraft(current => {
+      const draft = current ?? { revision: menuRevision, original: store.dishes, dishes: store.dishes };
+      return dishes.length === draft.original.length && dishes.every((dish, index) => dish === draft.original[index])
+        ? null : { ...draft, dishes };
+    });
+  }
+
   async function saveMenu() {
     if (menuBusy || !menuDraft) return;
     setSavingMenu(true);
@@ -118,9 +127,10 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
         revision: menuDraft.revision,
         changed: menuDraft.dishes.filter(dish => !originals.has(dish)),
         removedIds: menuDraft.original.filter(dish => !ids.has(dish.id)).map(dish => dish.id),
+        orderedIds: menuDraft.dishes.map(dish => dish.id),
       });
       notify(result.message, result.ok ? "success" : "error");
-      if (result.ok) setMenuDraft(null);
+      if (result.ok) { setMenuDraft(null); router.refresh(); }
     } catch {
       notify("Không lưu được Menu quán. Hãy thử lại.", "error");
     } finally {
@@ -219,6 +229,8 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div><h2 className="text-3xl">Menu quán</h2><p className="text-sm text-muted-foreground">{menuDishes.length} món · {menuDishes.filter(dish => dish.available).length} đang bán</p></div>
               <div className="flex flex-wrap gap-2">
+                <Button variant={reordering ? "secondary" : "outline"} disabled={menuBusy || !menuDishes.length} aria-pressed={reordering}
+                  onClick={() => setReordering(value => !value)}><ArrowDownUp size={15} aria-hidden="true" />{reordering ? "Xong sắp xếp" : "Sắp xếp"}</Button>
                 <Button variant="outline" disabled={menuBusy || Boolean(menuDraft)} onClick={syncShopMenu}>
                   <RefreshCw size={15} aria-hidden="true" />{syncingShop ? "Đang đồng bộ…" : "Đồng bộ từ beFood"}
                 </Button>
@@ -231,14 +243,14 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
             <div className="sticky top-2 z-10 mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:px-4">
               <p role="status" className="text-sm">
                 <span className="font-bold">{menuDraft ? "Có thay đổi chưa lưu" : "Menu quán đã lưu"}</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">{menuDraft ? "Lưu hoặc bỏ thay đổi trước khi đồng bộ từ beFood." : "Thêm, sửa hoặc xóa món rồi lưu để cập nhật trang khách."}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{menuDraft ? "Lưu thứ tự và các chỉnh sửa để cập nhật trang khách." : "Thêm, sửa, xóa hoặc sắp xếp món rồi lưu để cập nhật trang khách."}</span>
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 {menuDraft && <Button variant="outline" disabled={menuBusy} onClick={() => { setMenuDraft(null); router.refresh(); }}>Bỏ thay đổi</Button>}
                 <Button disabled={menuBusy || !menuDraft} onClick={saveMenu}><Save size={15} />{savingMenu ? "Đang lưu…" : "Lưu Menu quán"}</Button>
               </div>
             </div>
-            <div className="space-y-6">
+            {reordering ? <ShopMenuOrder dishes={menuDishes} disabled={menuBusy} onChange={stageOrder} /> : <div className="space-y-6">
               {!menuDishes.length && <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">Menu quán chưa có món.</p>}
               {dishGroups.map(({ category, dishes }) => <section key={category}>
                 <h3 className="mb-2 flex items-center gap-2">{category}<span className="rounded-full bg-secondary px-2 py-0.5 font-sans text-xs font-semibold">{dishes.length}</span></h3>
@@ -262,7 +274,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
                   </li>)}
                 </ul>
               </section>)}
-            </div>
+            </div>}
           </section>
         </> : <>
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Cửa hàng của bạn</p><h2 className="mt-1 text-2xl font-bold sm:text-3xl">Giao diện thực đơn</h2><p className="mt-1 text-sm text-muted-foreground">Xào Mì!</p></div><span className="flex items-center gap-1.5 text-xs font-semibold text-accent-foreground"><span className="size-2 rounded-full bg-emerald-600" />Đang hiển thị</span></div>

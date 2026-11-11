@@ -2,6 +2,7 @@ import "server-only";
 import { neon } from "@neondatabase/serverless";
 import { defaultAppearance, dishMatchKey, platformMenus, seedMenus, type Appearance, type MenuDish, type Platform, type PlatformDraftDish, type ShopInfo, type Voucher } from "./catalog";
 import { isHolidayTheme } from "./menu-data";
+import { applyMenuOrder } from "./menu-order";
 
 type PlatformMenuKey = (typeof platformMenus)[Platform]["key"];
 export type PlatformSnapshots = Partial<Record<PlatformMenuKey, { dishes: PlatformDraftDish[]; syncedAt: string }>>;
@@ -78,7 +79,7 @@ async function writeShopDishes(dishes: MenuDish[], revision: string) {
   return rows.length === 1;
 }
 
-export async function saveShopDishChanges(revision: string, changed: MenuDish[], removedIds: string[]) {
+export async function saveShopDishChanges(revision: string, changed: MenuDish[], removedIds: string[], orderedIds?: string[]) {
   const snapshot = await readShopDishes();
   if (snapshot.revision !== revision) return false;
 
@@ -87,7 +88,9 @@ export async function saveShopDishChanges(revision: string, changed: MenuDish[],
   for (const dish of changed) {
     dishes.set(dish.id, { ...dishes.get(dish.id), ...dish, tag: dish.tag, tags: dish.tags });
   }
-  return writeShopDishes([...dishes.values()], revision);
+  const ordered = orderedIds ? applyMenuOrder([...dishes.values()], orderedIds) : [...dishes.values()];
+  if (!ordered) return false;
+  return writeShopDishes(ordered, revision);
 }
 
 export async function syncBeShopDishes(source: MenuDish[]) {

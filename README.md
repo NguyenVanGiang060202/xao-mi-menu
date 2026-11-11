@@ -24,6 +24,10 @@ Website đặt món của quán cần team Vercel Pro hoặc Enterprise theo [qu
 5. Chạy `pnpm dlx vercel deploy --prod`. Mở URL `vercel.app` để kiểm tra trang khách và đăng nhập `/admin`. Mục **Giao diện → Lên lịch theo mùa** hiển thị các lịch đã lưu theo giờ Việt Nam.
 6. Khi có tên miền riêng, thêm trong **Settings → Domains** của project rồi trỏ DNS theo hướng dẫn Vercel.
 
+## Sắp xếp Menu quán
+
+Trong **Admin → Menu quán → Sắp xếp**, kéo tay nắm để đổi vị trí danh mục hoặc món trong cùng danh mục. Có thể dùng nút lên/xuống hoặc phím mũi tên trên tay nắm, kể cả trên điện thoại. **Xong sắp xếp** chỉ đóng chế độ sắp xếp; bấm **Lưu Menu quán** để công bố hoặc **Bỏ thay đổi** để khôi phục. Thứ tự danh mục cũng áp dụng cho bộ lọc trên trang khách. Menu các nền tảng giữ thứ tự từ nguồn đồng bộ.
+
 ## Kết nối đồng bộ GrabFood
 
 Trong **Admin → Menu quán → Kết nối GrabFood**, dán cURL của request `v2/order/merchants/5-C8KGJLKAN3UEEE` sau khi đăng nhập GrabFood bằng Google và chọn Tiếng Việt. Bấm **Kết nối và lưu** để kiểm tra nguồn trước khi lưu phiên.

@@ -230,11 +230,12 @@ export async function updateShopMenu(value: unknown) {
     revision: z.string().regex(/^(?:[a-f0-9]{32})?$/),
     changed: z.array(dish),
     removedIds: z.array(id),
+    orderedIds: z.array(id).max(2000).optional(),
   }).safeParse(value);
   if (!parsed.success) return { ok: false, message: "Thông tin món không hợp lệ. Kiểm tra tên, danh mục và giá." };
 
-  const { revision, changed, removedIds } = parsed.data;
-  if (!await saveShopDishChanges(revision, changed, removedIds)) {
+  const { revision, changed, removedIds, orderedIds } = parsed.data;
+  if (!await saveShopDishChanges(revision, changed, removedIds, orderedIds)) {
     return { ok: false, message: "Menu quán đã thay đổi ở phiên khác. Hãy bỏ bản chỉnh sửa để tải menu mới." };
   }
   revalidatePath("/");
