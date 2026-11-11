@@ -1,8 +1,8 @@
 import "server-only";
-import { localizeGrabDish, seedMenus, sharedDishTags, type PlatformDraftDish } from "./catalog";
+import { seedMenus, sharedDishTags, type PlatformDraftDish } from "./catalog";
 import grabSnapshot from "./grab-snapshot.json";
 import beSnapshot from "./be-snapshot.json";
-import { withVerifiedGrabPrices } from "./grab-menu-sync";
+import { completeGrabMenu } from "./grab-menu-sync";
 import type { Store } from "./store";
 
 export function getPublicMenu(store: Store, now: number) {
@@ -18,8 +18,7 @@ export function getPublicMenu(store: Store, now: number) {
     ...dish, image: dish.image ?? bePhotos.get(dish.id) ?? photos.get(dish.name.trim().toLocaleLowerCase("vi")),
   }));
   const withSharedTags = sharedDishTags(dishes);
-  const grabMenu = (store.grabMenu?.dishes ?? grabSnapshot).map(dish =>
-    withVerifiedGrabPrices(localizeGrabDish(dish, store.beMenu?.dishes ?? beSnapshot)));
+  const grabMenu = completeGrabMenu(store.grabMenu?.dishes ?? grabSnapshot, store.beMenu?.dishes ?? beSnapshot);
 
   return {
     appearance, shop, vouchers, now,

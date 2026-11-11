@@ -28,7 +28,26 @@ export function withVerifiedGrabPrices(dish: PlatformDraftDish): PlatformDraftDi
   return { ...dish, price: verified.price, originalPrice: verified.originalPrice };
 }
 
-export async function fetchGrabMenu(beDishes: readonly Pick<PlatformDraftDish, "name" | "description">[] = beSnapshot): Promise<PlatformDraftDish[]> {
+export function completeGrabMenu(source: readonly PlatformDraftDish[], beDishes: readonly PlatformDraftDish[]): PlatformDraftDish[] {
+  const dishes = source.filter(dish => !dish.supplementedFrom).map(dish =>
+    withVerifiedGrabPrices(localizeGrabDish(dish, beDishes)));
+  const names = new Set(dishes.map(dish => dishNameKey(dish.name)));
+  for (const dish of beDishes) {
+    const key = dishNameKey(dish.name);
+    if (names.has(key)) continue;
+    names.add(key);
+    dishes.push({
+      ...dish,
+      id: `be-fallback-${dish.id}`,
+      price: null,
+      originalPrice: undefined,
+      supplementedFrom: "be",
+    });
+  }
+  return dishes;
+}
+
+export async function fetchGrabMenu(beDishes: readonly PlatformDraftDish[] = beSnapshot): Promise<PlatformDraftDish[]> {
   const response = await fetch(`https://food.grab.com/proxy/foodweb/merchants/${merchantId}`, {
     cache: "no-store", signal: AbortSignal.timeout(8000),
     headers: { "Accept-Language": "vi-VN,vi;q=0.9" },
@@ -40,7 +59,7 @@ export async function fetchGrabMenu(beDishes: readonly Pick<PlatformDraftDish, "
     if (!category.available || recommendationCategories.has(category.name)) continue;
     for (const entry of category.items) {
       if (dishes.has(entry.ID)) continue;
-      dishes.set(entry.ID, localizeGrabDish({
+      dishes.set(entry.ID, {
         id: entry.ID,
         name: entry.name,
         price: entry.price ?? null,
@@ -49,9 +68,9 @@ export async function fetchGrabMenu(beDishes: readonly Pick<PlatformDraftDish, "
         description: entry.description ?? "",
         ingredients: "",
         image: entry.imgHref?.startsWith("https://huawei-food-cms.grab.com/") ? entry.imgHref : undefined,
-      }, beDishes));
+      });
     }
   }
   if (!dishes.size) throw new Error("Không tìm thấy menu GrabFood hợp lệ.");
-  return [...dishes.values()].map(withVerifiedGrabPrices);
+  return completeGrabMenu([...dishes.values()], beDishes);
 }

@@ -27,8 +27,10 @@ export async function getMenuTracking(value: unknown) {
 
 const syncTargetSchema = z.enum(["grab", "be", "xanh"]);
 
-function fetchPlatformMenu(platform: Platform, beDishes?: PlatformDraftDish[]) {
-  return platform === "grab" ? fetchGrabMenu(beDishes) : fetchBeMenu();
+async function fetchPlatformMenu(platform: Platform, beDishes?: PlatformDraftDish[]): Promise<PlatformDraftDish[]> {
+  if (platform !== "grab") return fetchBeMenu();
+  const references = await fetchBeMenu().catch(() => beDishes);
+  return fetchGrabMenu(references);
 }
 
 function menuDigest(dishes: PlatformDraftDish[]) {

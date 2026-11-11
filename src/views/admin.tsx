@@ -214,7 +214,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
 
       <div className="admin-content min-w-0">
         {activeSection === "tracking" ? <AdminTracking /> : activeSection === "menu" ? <>
-          <PlatformMenuSync beMenu={store.beMenu} grabMenu={store.grabMenu} xanhMenu={store.xanhMenu} notify={notify} />
+          <PlatformMenuSync beMenu={store.beMenu} grabMenu={store.grabMenu} xanhMenu={store.xanhMenu} menus={publicMenu.menus} notify={notify} />
           <section className="admin-sheet">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div><h2 className="text-3xl">Menu quán</h2><p className="text-sm text-muted-foreground">{menuDishes.length} món · {menuDishes.filter(dish => dish.available).length} đang bán</p></div>

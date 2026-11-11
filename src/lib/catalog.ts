@@ -8,13 +8,15 @@ export const platformMenus = {
   xanh: { label: "Xanh SM Ngon", key: "xanhMenu" },
 } as const;
 export type Platform = keyof typeof platformMenus;
-export type PlatformDraftDish = Omit<MenuDish, "price"> & { price: number | null };
+export type PlatformDraftDish = Omit<MenuDish, "price"> & { price: number | null; supplementedFrom?: "be" };
 
 const grabVietnameseNames: Record<string, string> = {
   "noodles mixed with egg, sausage + drink": "Mì trộn trứng xúc xích + nước",
   "stir-fried noodles with egg, sausage + drink": "Mì xào trứng xúc xích + nước",
   "stir-fried noodles with beef and egg + drink": "Mì xào bò trứng + nước",
-  "stir-fried noodles with beef + soup": "Mì xào bò + súp",
+  "stir-fried noodles with beef + soup": "Mì xào bò + nước",
+  "stir-fried noodles with beef + drink": "Mì xào bò + nước",
+  "mì xào bò + súp": "Mì xào bò + nước",
   "stir-fried noodles with egg and sausage": "Mì xào trứng xúc xích",
   "stir-fried noodles with beef and egg": "Mì xào bò trứng",
   "stir-fried beef noodles": "Mì xào bò",

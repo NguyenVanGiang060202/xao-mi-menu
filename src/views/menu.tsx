@@ -238,7 +238,7 @@ export function MenuPage({ menus, appearance, vouchers, now, shop, trackTraffic 
           </div>
           <SeasonSticker theme={theme} category={group.name} movable />
           <div className="menu-category-items grid sm:grid-cols-2">
-            {group.dishes.map(dish => <DishRow key={dish.id} dish={dish} channel={channel} onPriceClick={(event) => trackLink(event, "grab_price")} />)}
+            {group.dishes.map(dish => <DishRow key={dish.id} dish={dish} channel={channel} onPriceClick={(event) => trackLink(event, dish.supplementedFrom === "be" ? "be" : "grab_price")} />)}
           </div>
         </section>) : <div className="mb-8 rounded-3xl border border-dashed border-primary/25 bg-card py-12 text-center text-sm text-muted-foreground">{menu.length ? "Chưa tìm thấy món phù hợp." : "Menu quán đang được cập nhật."}{!menu.length && <div className="mt-3 flex justify-center gap-3"><Button variant="outline" onClick={() => selectChannel("grab")}>Xem menu GrabFood</Button><Button variant="outline" onClick={() => selectChannel("be")}>Xem menu beFood</Button></div>}</div>}
 
@@ -251,6 +251,7 @@ export function MenuPage({ menus, appearance, vouchers, now, shop, trackTraffic 
 
 function DishRow({ dish, channel, onPriceClick }: { dish: Dish; channel: Channel; onPriceClick: (event: MouseEvent<HTMLAnchorElement>) => void }) {
   const { price } = dish;
+  const priceChannel = dish.supplementedFrom ?? "grab";
   const discount = channel !== "shop" && dish.originalPrice !== undefined && price !== null ? dish.originalPrice - price : 0;
   return <article data-available={dish.available} className={`menu-dish flex min-h-[114px] min-w-0 w-full items-center gap-3 overflow-hidden rounded-xl border-b border-border px-1 py-3 text-left sm:gap-4 ${dish.available ? "" : "opacity-55"}`}>
     {dish.image ? <img src={dish.image} alt="" width={1024} height={1024} loading="lazy" className="size-[68px] shrink-0 rounded-2xl object-cover sm:size-[80px]" /> : <div aria-hidden="true" className="flex size-[68px] shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary/70 sm:size-[80px]"><Soup size={28} strokeWidth={1.5} /></div>}
@@ -261,10 +262,11 @@ function DishRow({ dish, channel, onPriceClick }: { dish: Dish; channel: Channel
         {!dish.available && <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">Tạm hết</span>}
       </span>
       <DishTags dish={dish} />
+      {dish.supplementedFrom && <span className="mt-1.5 self-start rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">Bổ sung từ beFood</span>}
       {(dish.description || dish.ingredients) && <span className="mt-1 text-xs font-normal leading-5 text-muted-foreground">{dish.description || dish.ingredients}</span>}
       <span className="mt-2 flex flex-wrap items-baseline gap-x-2 text-base font-bold tabular-nums text-foreground">
-        {price === null ? <a href={channels.grab.url} target="_blank" rel="noreferrer" onClick={onPriceClick} onAuxClick={onPriceClick} className="inline-flex items-center gap-1 rounded text-xs text-muted-foreground underline underline-offset-2 focus-visible:outline-2">
-          Xem giá trên GrabFood <ArrowUpRight size={13} aria-hidden="true" />
+        {price === null ? <a href={channels[priceChannel].url} target="_blank" rel="noreferrer" onClick={onPriceClick} onAuxClick={onPriceClick} className="inline-flex items-center gap-1 rounded text-xs text-muted-foreground underline underline-offset-2 focus-visible:outline-2">
+          {dish.supplementedFrom ? "Xem món trên beFood" : "Xem giá trên GrabFood"} <ArrowUpRight size={13} aria-hidden="true" />
         </a> : formatPrice(price)}
         {discount > 0 && dish.originalPrice !== undefined && <span className="text-xs font-medium text-muted-foreground line-through">{formatPrice(dish.originalPrice)}</span>}
       </span>
