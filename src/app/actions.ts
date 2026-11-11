@@ -27,8 +27,8 @@ export async function getMenuTracking(value: unknown) {
 
 const syncTargetSchema = z.enum(["grab", "be", "xanh"]);
 
-function fetchPlatformMenu(platform: Platform) {
-  return platform === "grab" ? fetchGrabMenu() : fetchBeMenu();
+function fetchPlatformMenu(platform: Platform, beDishes?: PlatformDraftDish[]) {
+  return platform === "grab" ? fetchGrabMenu(beDishes) : fetchBeMenu();
 }
 
 function menuDigest(dishes: PlatformDraftDish[]) {
@@ -40,7 +40,8 @@ export async function previewPlatformMenu(value: unknown) {
   const platform = syncTargetSchema.parse(value);
   const canPublish = Boolean(process.env.DATABASE_URL);
   try {
-    const [store, dishes] = await Promise.all([readStore(), fetchPlatformMenu(platform)]);
+    const store = await readStore();
+    const dishes = await fetchPlatformMenu(platform, store.beMenu?.dishes);
     const published = store[platformMenus[platform].key];
     return { ok: true as const, dishes, digest: menuDigest(dishes), previousSync: published?.syncedAt ?? "", canPublish };
   } catch {
@@ -76,7 +77,8 @@ export async function confirmPlatformMenu(value: unknown) {
   }).safeParse(value);
   if (!parsed.success) return { ok: false, message: "Bản duyệt không hợp lệ. Hãy đồng bộ lại." };
   const { platform, digest, previousSync } = parsed.data;
-  const dishes = await fetchPlatformMenu(platform);
+  const store = await readStore();
+  const dishes = await fetchPlatformMenu(platform, store.beMenu?.dishes);
   if (menuDigest(dishes) !== digest) {
     return { ok: false, message: "Thực đơn trên nền tảng đã thay đổi. Hãy bỏ bản duyệt và đồng bộ lại." };
   }

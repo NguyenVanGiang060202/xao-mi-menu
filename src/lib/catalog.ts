@@ -20,14 +20,40 @@ const grabVietnameseNames: Record<string, string> = {
   "stir-fried beef noodles": "Mì xào bò",
   "noodles mixed with egg and sausage": "Mì trộn trứng xúc xích",
   "beef and egg mixed noodles": "Mì trộn bò trứng",
+  "stir-fried noodles with beef + lemon tea": "Mì xào bò + trà chanh",
+  "stir-fried noodles with beef, peach tea.": "Mì xào bò + trà đào",
+  "stir-fried noodles with beef + peach tea": "Mì xào bò + trà đào",
+  "beef and egg mixed noodles + peach tea": "Mì trộn bò trứng + trà đào",
+  "beef and egg mixed noodles + lemon tea": "Mì trộn bò trứng + trà chanh",
   "pepsi cup": "Pepsi ly",
   "peach tea": "Trà đào",
   "lemon tea": "Trà chanh",
 };
 
-export function localizeGrabDish<T extends { name: string; description: string }>(dish: T): T {
-  const name = grabVietnameseNames[dish.name.trim().toLowerCase()];
-  return name ? { ...dish, name, description: "" } : dish;
+const grabVietnameseCategories: Record<string, string> = {
+  "stir-fried noodles": "Mì xào",
+  "mixed noodles": "Mì trộn",
+  "beverage": "Đồ uống",
+  "best-selling combo": "Combo bán chạy",
+};
+
+export function dishNameKey(name: string) {
+  const key = name.normalize("NFC").toLocaleLowerCase("vi").replaceAll(",", "").replace(/\s+/g, " ").trim();
+  return key === "pepsi ly" ? "pepsi" : key;
+}
+
+type DishText = Pick<PlatformDraftDish, "name" | "description">;
+
+export function localizeGrabDish<T extends DishText & { category: string }>(dish: T, beDishes: readonly DishText[] = []): T {
+  const translatedName = grabVietnameseNames[dish.name.trim().toLowerCase()];
+  const name = translatedName ?? dish.name;
+  const reference = beDishes.find(candidate => dishNameKey(candidate.name) === dishNameKey(name));
+  const category = grabVietnameseCategories[dish.category.trim().toLowerCase()] ?? dish.category;
+  return {
+    ...dish, category,
+    name: reference?.name.trim() ?? name,
+    description: reference ? reference.description : translatedName ? "" : dish.description,
+  };
 }
 export type Appearance = { theme: ThemeName; greeting: string; accent: string; background: string; image: string; logo: string };
 export type Voucher = { title: string; code: string; terms: string; start: string; end: string };
@@ -103,8 +129,7 @@ const shop = grab.map(({ originalPrice, ...dish }) => ({
 export const seedMenus = { shop, grab, be };
 
 export function dishMatchKey(dish: Pick<MenuDish, "name" | "category">) {
-  const name = dish.name.normalize("NFC").toLocaleLowerCase("vi").replaceAll(",", "").replace(/\s+/g, " ").trim();
-  return `${dish.category}:${name === "pepsi ly" ? "pepsi" : name}`;
+  return `${dish.category}:${dishNameKey(dish.name)}`;
 }
 
 export function sharedDishTags(shopDishes: MenuDish[]) {

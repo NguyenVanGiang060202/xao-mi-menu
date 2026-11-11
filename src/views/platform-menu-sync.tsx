@@ -11,7 +11,7 @@ import { formatPrice } from "@/lib/menu-data";
 import type { PlatformSnapshots } from "@/lib/store";
 
 const platformHelp: Record<Platform, string> = {
-  grab: "Khi nguồn đồng bộ thiếu giá, dùng giá đã đối chiếu trên GrabFood cho món khớp.",
+  grab: "Dùng tên và mô tả beFood đã đồng bộ khi khớp đúng món. Món chưa khớp giữ tên gốc. Khi thiếu giá, dùng giá GrabFood đã đối chiếu.",
   be: "Lấy dữ liệu từ gian hàng beFood.",
   xanh: "Lấy danh sách từ beFood và công bố riêng cho tab Xanh SM Ngon.",
 };

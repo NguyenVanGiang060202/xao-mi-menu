@@ -18,7 +18,8 @@ export function getPublicMenu(store: Store, now: number) {
     ...dish, image: dish.image ?? bePhotos.get(dish.id) ?? photos.get(dish.name.trim().toLocaleLowerCase("vi")),
   }));
   const withSharedTags = sharedDishTags(dishes);
-  const grabMenu = store.grabMenu?.dishes.map(dish => withVerifiedGrabPrices(localizeGrabDish(dish))) ?? grabSnapshot;
+  const grabMenu = (store.grabMenu?.dishes ?? grabSnapshot).map(dish =>
+    withVerifiedGrabPrices(localizeGrabDish(dish, store.beMenu?.dishes ?? beSnapshot)));
 
   return {
     appearance, shop, vouchers, now,
