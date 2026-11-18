@@ -8,7 +8,7 @@ import { SeasonGutterStickers, SeasonSticker } from "@/components/season-sticker
 import { StorefrontAwning } from "@/components/storefront-awning";
 import { formatPrice, getDishTags, themes, type Channel } from "@/lib/menu-data";
 import { channels, defaultShopSchedule, shopDays, shopLocation, type PlatformDraftDish as Dish, type Appearance, type ShopInfo, type Voucher } from "@/lib/catalog";
-import { trackingCategories, trackingMenuTabs, trackingScrollLevels, type TrackingEvent } from "@/lib/tracking-data";
+import { trackingCategories, trackingScrollLevels, type TrackingEvent } from "@/lib/tracking-data";
 const channelNames: Record<Channel, string> = { shop: "Menu quán", grab: "GrabFood", be: "beFood", xanh: "Xanh SM Ngon" };
 const categoryIcons: Record<string, typeof Soup> = {
   Combo: Layers,
@@ -28,16 +28,38 @@ const channelStyles: Record<Channel, string> = {
   be: "menu-channel-be",
   xanh: "menu-channel-xanh",
 };
-const zaloNumber = "0399944450";
+const zaloNumber = "0393508079";
 const zaloUrl = `https://zalo.me/${zaloNumber}`;
+const contactName = "Văn Giang";
+const compactShopDays = { weekday: "T2 – T6", weekend: "T7 – CN" } as const;
 
 function sendMenuEvents(...events: TrackingEvent[]) {
   const query = new URLSearchParams(events.map((event) => ["event", event]));
   void fetch(`/api/menu-tracking?${query}`, { method: "POST", keepalive: true }).catch(() => {});
 }
 
-export function MenuPage({ menus, appearance, vouchers, now, shop, trackTraffic = false }: { menus: Record<Channel, Dish[]>; appearance: Appearance; vouchers: { grab: Voucher[]; be: Voucher[] }; now: number; shop: ShopInfo; trackTraffic?: boolean }) {
-  const [channel, setChannel] = useState<Channel>("shop");
+type MenuPageProps = {
+  menus: Record<Channel, Dish[]>;
+  appearance: Appearance;
+  vouchers: { grab: Voucher[]; be: Voucher[] };
+  now: number;
+  shop: ShopInfo;
+  trackTraffic?: boolean;
+  initialChannel?: Channel;
+  channelOrder?: readonly Channel[];
+};
+
+export function MenuPage({
+  menus,
+  appearance,
+  vouchers,
+  now,
+  shop,
+  trackTraffic = false,
+  initialChannel = "xanh",
+  channelOrder = ["xanh", "grab", "be"],
+}: MenuPageProps) {
+  const [channel, setChannel] = useState<Channel>(initialChannel);
   const [category, setCategory] = useState("Tất cả");
   const [query, setQuery] = useState("");
   const [navigationStuck, setNavigationStuck] = useState(false);
@@ -134,9 +156,17 @@ export function MenuPage({ menus, appearance, vouchers, now, shop, trackTraffic 
   }
 
   function trackOrder(event: MouseEvent<HTMLAnchorElement>) {
-    if (channel === "shop") trackLink(event, "zalo", "zalo_navigation");
-    else trackLink(event, channel);
+    trackLink(event, "xanh");
   }
+
+  const orderChannel = "xanh" as const;
+
+  const sameHours = schedule.weekday.open === schedule.weekend.open && schedule.weekday.close === schedule.weekend.close;
+  const hoursLines = !shop.schedule && shop.hours.trim()
+    ? [shop.hours]
+    : sameHours
+      ? [`${schedule.weekday.open} – ${schedule.weekday.close} mỗi ngày`]
+      : shopDays.map(({ id }) => `${compactShopDays[id]}: ${schedule[id].open} – ${schedule[id].close}`);
 
   return (
     <main className={`menu-page min-h-screen bg-background pb-28 text-foreground theme-${theme}`} style={{ "--primary": appearance.accent, ...((appearance.background || themeInfo.background) ? { "--background": appearance.background || themeInfo.background } : {}) } as React.CSSProperties}>
@@ -146,61 +176,49 @@ export function MenuPage({ menus, appearance, vouchers, now, shop, trackTraffic 
         <StorefrontAwning />
         <div className="menu-hero-inner relative px-4 sm:px-6">
           <div className="menu-sign">
-            <div className="flex items-center gap-3 sm:gap-5">
-              <div className="menu-brand-mark relative shrink-0">
-                <div className="menu-logo flex size-20 overflow-hidden rounded-full sm:size-28">
-                  <img src={appearance.logo || "/xao-mi-logo.jpg"} alt="" width={112} height={112}
-                    className={`size-full object-contain ${appearance.logo ? "" : "scale-[1.48]"}`} />
+            <div className="menu-brand-stage">
+              <div className="menu-brand-lockup flex min-w-0 items-center gap-3 sm:gap-5">
+                <div className="menu-brand-mark relative shrink-0">
+                  <div className="menu-logo flex size-20 overflow-hidden rounded-full sm:size-28">
+                    <img src={appearance.logo || "/xao-mi-logo.jpg"} alt="" width={112} height={112}
+                      className={`size-full object-contain ${appearance.logo ? "" : "scale-[1.48]"}`} />
+                  </div>
+                  <SeasonSticker theme={theme} movable />
                 </div>
-                <SeasonSticker theme={theme} movable />
-              </div>
-              <div className="min-w-0">
-                {theme !== "default" && <p className="text-xs font-semibold">{themeInfo.eyebrow}</p>}
-                <h1 className="menu-wordmark font-black leading-none">Xào Mì!</h1>
-                {appearance.greeting.trim() && <p className="menu-greeting">{appearance.greeting.trim()}</p>}
-              </div>
-            </div>
-          <section aria-label="Thông tin liên hệ của quán"
-            className="menu-shop-contact mt-3 grid min-w-0 gap-2 rounded-[1.65rem] border p-2 sm:p-3">
-            <div className="menu-contact-hours relative flex flex-col items-center justify-center gap-1.5 rounded-[1.15rem] p-2.5">
-              <Clock3 size={18} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
-              <div className="min-w-0 w-full">
-                <p className="menu-contact-label text-center text-[13px] font-semibold leading-tight">Giờ mở cửa</p>
-                {!shop.schedule && shop.hours.trim() ? <p className="menu-hours-highlight mt-1 rounded-full px-3 py-1.5 text-center text-sm font-bold">{shop.hours}</p> : <dl className="menu-hours-slots mt-2 grid gap-1.5 text-center text-xs tabular-nums">
-                  {shopDays.map(({ id, label }) => <div key={id} className="menu-hours-highlight rounded-xl px-2 py-1.5">
-                    <dt className="menu-contact-label">{label}</dt>
-                    <dd className="menu-hours-value mt-0.5 text-lg font-extrabold leading-tight sm:text-xl">{schedule[id].open} – {schedule[id].close}</dd>
-                  </div>)}
-                </dl>}
+                <div className="menu-brand-copy min-w-0">
+                  {theme !== "default" && <p className="text-xs font-semibold">{themeInfo.eyebrow}</p>}
+                  <h1 className="menu-wordmark font-black leading-none">Xào Mì!</h1>
+                  <span className="menu-brand-swoosh" aria-hidden="true" />
+                  {appearance.greeting.trim() && <p className="menu-greeting">{appearance.greeting.trim()}</p>}
+                </div>
               </div>
             </div>
-            <a href={shopLocation.mapsUrl} target="_blank" rel="noreferrer"
-              onClick={(event) => trackLink(event, "maps")} onAuxClick={(event) => trackLink(event, "maps")}
-              className="menu-contact-action grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-1 rounded-[1.15rem] px-2.5 py-2 focus-visible:outline-2 focus-visible:-outline-offset-2">
-              <MapPin size={18} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
-              <span className="min-w-0 flex-1">
-                <span className="menu-contact-label block text-[13px] font-semibold leading-tight">Địa chỉ</span>
-                <span className="mt-0.5 block text-base font-extrabold leading-tight">{shopLocation.address}</span>
-              </span>
-              <span className="menu-directions col-start-2 inline-flex min-h-6 min-w-20 items-center justify-center gap-1 justify-self-start rounded-full px-2 text-xs font-extrabold">
-                Chỉ đường <ArrowUpRight size={12} aria-hidden="true" />
-              </span>
-            </a>
-            <a href={zaloUrl} target="_blank" rel="noreferrer"
-              onClick={(event) => trackLink(event, "zalo", "zalo_contact")}
-              onAuxClick={(event) => trackLink(event, "zalo", "zalo_contact")}
-              className="menu-contact-action grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-1 rounded-[1.15rem] px-2.5 py-2 focus-visible:outline-2 focus-visible:-outline-offset-2">
-              <MessageCircle size={18} strokeWidth={1.9} className="menu-contact-icon shrink-0" aria-hidden="true" />
-              <span className="min-w-0">
-                <span className="menu-contact-label block text-[13px] font-semibold leading-tight">Đặt món qua Zalo</span>
-                <span className="mt-0.5 block text-base leading-tight"><strong className="font-extrabold tabular-nums">{zaloNumber}</strong><span className="menu-contact-label"> · Hiếu Kiên</span></span>
-              </span>
-              <span className="menu-directions col-start-2 inline-flex min-h-6 min-w-20 items-center justify-center gap-1 justify-self-start rounded-full px-2 text-xs font-extrabold">
-                Đặt món <ArrowUpRight size={12} aria-hidden="true" />
-              </span>
-            </a>
-          </section>
-
+            <div className="menu-hero-side">
+              <a href={channels.xanh.url} target="_blank" rel="noreferrer"
+                onClick={trackOrder} onAuxClick={trackOrder}
+                className="menu-order-cta menu-channel-cta menu-channel-xanh inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full px-5 text-base font-extrabold sm:text-lg">
+                <span className="menu-cta-label">Đặt qua Xanh SM Ngon</span><ArrowUpRight size={20} aria-hidden="true" />
+              </a>
+              <a href={zaloUrl} target="_blank" rel="noreferrer"
+                aria-label={`Nhắn Zalo ${zaloNumber}, ${contactName}`}
+                onClick={(event) => trackLink(event, "zalo", "zalo_contact")}
+                onAuxClick={(event) => trackLink(event, "zalo", "zalo_contact")}
+                className="menu-zalo-cta inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-base font-bold">
+                <MessageCircle size={20} aria-hidden="true" />Nhắn Zalo đặt món
+              </a>
+              <ul className="menu-hero-meta" aria-label="Thông tin quán">
+                <li className="menu-hero-hours">
+                  <Clock3 size={18} aria-hidden="true" />
+                  <span>{hoursLines.map((line) => <span key={line} className="block tabular-nums">{line}</span>)}</span>
+                </li>
+                <li>
+                  <a href={shopLocation.mapsUrl} target="_blank" rel="noreferrer"
+                    onClick={(event) => trackLink(event, "maps")} onAuxClick={(event) => trackLink(event, "maps")}>
+                    <MapPin size={18} aria-hidden="true" />Chỉ đường
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </header>
@@ -208,13 +226,13 @@ export function MenuPage({ menus, appearance, vouchers, now, shop, trackTraffic 
       <div ref={navigationMarker} className="-mb-px h-px" aria-hidden="true" />
       <section className="menu-navigation sticky top-0 z-30" data-stuck={navigationStuck}>
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:gap-3" role="tablist" aria-label="Chọn nơi đặt món">
-            {trackingMenuTabs.map(({ id: key }) => <Button key={key} role="tab" aria-selected={channel === key} variant="ghost" onClick={() => selectChannel(key)} className={`menu-channel-tab ${channelStyles[key]} h-11 flex-1 rounded-xl px-2 text-xs font-bold sm:flex-none sm:px-5 sm:text-sm`}><span>{channelNames[key]}</span></Button>)}
-          </div>
-          <a href={channel === "shop" ? zaloUrl : channels[channel].url} target="_blank" rel="noreferrer"
+          {channelOrder.length > 0 && <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:gap-3" role="tablist" aria-label="Chọn nơi đặt món">
+            {channelOrder.map((key) => <Button key={key} role="tab" aria-selected={channel === key} variant="ghost" onClick={() => selectChannel(key)} className={`menu-channel-tab ${channelStyles[key]} h-11 flex-1 rounded-xl px-2 text-xs font-bold sm:flex-none sm:px-5 sm:text-sm`}><span>{channelNames[key]}</span></Button>)}
+          </div>}
+          <a href={channels[orderChannel].url} target="_blank" rel="noreferrer"
             onClick={trackOrder} onAuxClick={trackOrder}
-            className={`menu-channel-cta ${channelStyles[channel]} inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold`}>
-            <span key={channel} className="menu-cta-label">{channel === "shop" ? "Đặt qua Zalo" : `Đặt qua ${channelNames[channel]}`}</span><ArrowUpRight size={16} aria-hidden="true" />
+            className={`menu-channel-cta ${channelStyles[orderChannel]} inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold`}>
+            <span className="menu-cta-label">Đặt qua Xanh SM Ngon</span><ArrowUpRight size={16} aria-hidden="true" />
           </a>
         </div>
         {menu.length > 0 && <nav className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-3 sm:px-8" aria-label="Danh mục món">

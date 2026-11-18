@@ -12,7 +12,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const menu = getPublicMenu(store, Date.now());
   const { preview } = await searchParams;
   const name = preview === "noel" ? "christmas" : preview;
-  if (!name || !Object.hasOwn(themes, name)) return <MenuPage {...menu} trackTraffic={preview === undefined && process.env.VERCEL_ENV !== "preview"} />;
+  if (!name || !Object.hasOwn(themes, name)) {
+    return <MenuPage
+      {...menu}
+      initialChannel="xanh"
+      channelOrder={["xanh", "grab", "be"]}
+      trackTraffic={preview === undefined && process.env.VERCEL_ENV !== "preview"}
+    />;
+  }
   const theme = name as ThemeName;
   const { title, greeting, accent, background } = themes[theme];
   const appearance = { ...menu.appearance, theme, greeting, accent, background, image: "" };
@@ -22,6 +29,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
       <Link href="/admin" className="inline-flex min-h-10 items-center gap-2 font-semibold"><ArrowLeft size={16} />Quay lại admin</Link>
       <span className="text-xs">Xem thử {title}</span>
     </div>
-    <MenuPage {...menu} appearance={appearance} />
+    <MenuPage
+      {...menu}
+      appearance={appearance}
+      initialChannel="xanh"
+      channelOrder={["xanh", "grab", "be"]}
+    />
   </>;
 }
