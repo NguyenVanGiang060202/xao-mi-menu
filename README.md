@@ -23,6 +23,16 @@ Website đặt món của quán cần team Vercel Pro hoặc Enterprise theo [qu
 4. Để bật tải ảnh trong admin, tạo một Vercel Blob store **Public** và kết nối với project để cấp `BLOB_READ_WRITE_TOKEN` cho Production.
 5. Chạy `pnpm dlx vercel deploy --prod`. Mở URL `vercel.app` để kiểm tra trang khách và đăng nhập `/admin`. Mục **Giao diện → Lên lịch theo mùa** hiển thị các lịch đã lưu theo giờ Việt Nam.
 6. Khi có tên miền riêng, thêm trong **Settings → Domains** của project rồi trỏ DNS theo hướng dẫn Vercel.
+7. Đặt `NEXT_PUBLIC_SITE_URL` (ví dụ `https://xaomimenu.vercel.app` hoặc tên miền riêng) để metadata, canonical, `robots.txt`, `sitemap.xml` và ảnh chia sẻ dùng đúng URL công khai. Khi biến này trống, mã nguồn lấy `VERCEL_PROJECT_PRODUCTION_URL` của Vercel, rồi mới đến `https://xaomimenu.vercel.app`.
+
+## Metadata và SEO
+
+Metadata nằm trong `src/app/layout.tsx` (mặc định toàn site), `src/app/menuquan/page.tsx` (thực đơn quán) và `src/app/admin/page.tsx` (`noindex`). Thông tin quán dùng chung lấy từ `src/lib/site.ts`.
+
+- Ảnh chia sẻ: `public/og-image.png` (1200×630).
+- Icon: `src/app/icon.png`, `src/app/apple-icon.png`, `public/favicon.ico`; icon PWA trong `public/icons/`.
+- `robots.txt`, `sitemap.xml` và `manifest.webmanifest` được tạo bởi `src/app/robots.ts`, `src/app/sitemap.ts`, `src/app/manifest.ts`.
+- Dữ liệu có cấu trúc `Restaurant` (JSON-LD) được render trong `layout.tsx`.
 
 ## Sắp xếp Menu quán
 

@@ -5,7 +5,7 @@ import { readStoreWithMenuRevision } from "@/lib/store";
 import { getPublicMenu } from "@/lib/public-menu";
 import { AdminPage } from "@/views/admin";
 
-export const metadata = { title: "Quản lý · Xào Mì!", robots: { index: false, follow: false } };
+export const metadata = { title: { absolute: "Quản lý · Xào Mì!" }, alternates: { canonical: "/admin" }, robots: { index: false, follow: false } };
 export default async function Page({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (await isAdmin()) {
     const { store, menuRevision } = await readStoreWithMenuRevision();
@@ -16,7 +16,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ e
     <div className="admin-sheet w-full max-w-sm">
       <Link href="/" className="text-sm font-semibold text-primary">← Xem thực đơn</Link>
       <div className="mb-6 mt-5 flex items-center gap-3">
-        <img src="/xao-mi-logo.jpg" alt="" className="size-14 rounded-full border border-[#edb76d] object-cover" />
+        <img src="/xao-mi-logo.png" alt="" className="size-14 rounded-full border border-[#edb76d] object-cover" />
         <h1 className="admin-heading text-3xl leading-tight">Quản lý Xào Mì!</h1>
       </div>
       <form action={login} className="grid gap-3">

@@ -206,7 +206,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
     <header className="admin-header">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-8">
         <div className="flex items-center gap-3">
-          <img src="/xao-mi-logo.jpg" alt="" className="size-12 rounded-full border-2 border-[#ffd889] object-cover" />
+          <img src="/xao-mi-logo.png" alt="" className="size-12 rounded-full border-2 border-[#ffd889] object-cover" />
           <div><h1 className="admin-heading text-3xl leading-none">Xào Mì!</h1><p className="mt-1 text-xs text-[#ffe4bc]">Quản lý quán</p></div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -474,7 +474,7 @@ function PreviewPanel({ mode, appearance, dishes }: { mode: "phone" | "desktop";
       <div className="relative flex items-center gap-3 px-3 py-5 sm:px-5">
         <div className="menu-brand-mark relative shrink-0">
           <div className="menu-logo grid size-14 place-items-center overflow-hidden rounded-full sm:size-16">
-            <img src={logo || "/xao-mi-logo.jpg"} alt="" className={`size-full object-contain ${logo ? "" : "scale-[1.48]"}`} />
+            <img src={logo || "/xao-mi-logo.png"} alt="" className={`size-full object-contain ${logo ? "" : "scale-[1.48]"}`} />
           </div>
           <SeasonSticker theme={theme} />
         </div>

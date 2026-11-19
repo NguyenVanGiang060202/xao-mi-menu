@@ -29,7 +29,7 @@ function describe(appearance: Appearance) {
 
 function AppearanceValue({ field, value }: { field: keyof Appearance; value: string }) {
   if (field === "image" || field === "logo") {
-    const source = value || (field === "logo" ? "/xao-mi-logo.jpg" : "");
+    const source = value || (field === "logo" ? "/xao-mi-logo.png" : "");
     return source ? <img src={source} alt={value ? "Ảnh đã chọn" : "Logo mặc định"} className="h-11 w-16 rounded-md border border-border bg-card object-contain" />
       : <span className="text-muted-foreground">Chưa có ảnh</span>;
   }
