@@ -11,7 +11,7 @@ Sản phẩm có hai bề mặt khác nhau:
 
 Ngôn ngữ thương hiệu: quán mì xào Việt Nam ấm, vui và có cảm giác bảng hiệu/mặt tiền. Không dùng phong cách dashboard SaaS, glassmorphism, gradient lạnh hoặc card chồng card.
 
-CTA chính trên trang khách là **Đặt qua Xanh SM Ngon**. CTA trong hero là hành động chính; CTA ở navigation chỉ là bản tiện ích khi khách đã cuộn.
+CTA chính trên trang khách là **Đặt qua Xanh SM Ngon**. CTA trong hero là hành động chính; Zalo là hành động phụ; CTA ở navigation chỉ là bản tiện ích khi khách đã cuộn. Trang khách không có tìm kiếm: menu ngắn, dùng tab nền tảng và filter category là đủ.
 
 ## 2. Nguồn sự thật kỹ thuật
 
@@ -20,7 +20,8 @@ CTA chính trên trang khách là **Đặt qua Xanh SM Ngon**. CTA trong hero l�
 | Token Tailwind/shadcn và CSS trang khách | `src/styles.css` |
 | Markup trang khách | `src/views/menu.tsx` |
 | Dữ liệu/menu/theme | `src/lib/catalog.ts`, `src/lib/menu-data.ts`, `src/lib/public-menu.ts` |
-| Logo mặc định | `public/xao-mi-logo.jpg` |
+| Logo mặc định | `public/xao-mi-logo.png` |
+| Metadata/SEO, icon, ảnh chia sẻ | `src/app/layout.tsx`, `src/lib/site.ts`, `public/og-image.png` |
 | UI admin | `src/views/admin.tsx`, `src/views/*.tsx` liên quan |
 | Font | `@fontsource-variable/baloo-2` trong `src/app/layout.tsx` |
 
@@ -49,7 +50,7 @@ Neutrals phải nghiêng vàng/kem. Không thêm grey lạnh hoặc trắng/đen
 
 - UI/body: system UI (`system-ui`, `Segoe UI`, sans-serif).
 - Brand, tiêu đề kênh và tiêu đề category: `Baloo 2 Variable`.
-- Wordmark `Xào Mì!`: Baloo 2, weight `800`, tracking `-0.035em`, kem `#fff4d8`, bóng đỏ rượu lệch xuống-phải. Đây là một treatment logo, không áp dụng bóng chữ này cho heading khác.
+- Wordmark `Xào Mì!`: Baloo 2, weight `800`, tracking `-0.035em`, kem `#fff4d8`, viền đỏ rượu quanh chữ + bóng mềm. Đây là một treatment logo, không áp dụng cho heading khác.
 - Số giá và giờ: `tabular-nums`.
 - Không thêm font display mới nếu chưa có asset/giấy phép cụ thể. Baloo 2 đã là lựa chọn mềm, tròn và phù hợp logo hiện có.
 
@@ -62,16 +63,17 @@ Neutrals phải nghiêng vàng/kem. Không thêm grey lạnh hoặc trắng/đen
 | Section | 24–32px | cách category/khối độc lập |
 | Control | 10–12px radius | tab, filter, input, nút nhỏ |
 | Card | 20px radius | category/menu card |
-| Hero/panel lớn | 32–48px radius | storefront và panel thông tin |
+| Hero/panel lớn | 32px radius | storefront |
 
 Chỉ dùng bo lớn ở mặt tiền, panel hero và category. Không bọc mọi text bằng pill hoặc card.
 
 ### Độ sâu
 
 - Menu/category: border caramel hoặc divider nét đứt, không cần shadow lớn.
-- Hero: viền đỏ sẫm + chân đế đỏ sẫm 6–8px và một bóng mềm thấp.
-- CTA Xanh: viền xanh đậm + bóng đế ngắn. Đây là yếu tố nâng lên duy nhất trong hero.
-- Không kết hợp đồng thời border cứng, shadow lớn và nền đậm cho cùng một panel trừ storefront.
+- Hero: **không có shadow và không viền dày**; khối hero phẳng, tách khỏi canvas bằng màu nền đậm.
+- Nút nâng lên (có "chân đế" 3–4px): CTA Xanh trong hero, nút Zalo kem, tab nền tảng đang chọn. Các phần tử khác phẳng.
+- Wordmark: viền đỏ rượu quanh chữ kem (text-shadow 8 hướng) + một bóng mềm. Đây là treatment logo, không áp cho chữ khác.
+- Không kết hợp đồng thời border cứng, shadow lớn và nền đậm cho cùng một panel.
 
 ## 4. Trang khách
 
@@ -83,7 +85,7 @@ canvas kem + pattern doodle nhẹ
    ├─ storefront hero
    ├─ sticky navigation: nền tảng + CTA tiện ích
    ├─ category filters
-   └─ menu content: title/search → category boards → dish rows
+   └─ menu content: category boards → dish rows
 ```
 
 - Container hero/menu dùng cùng mép ngang: `max-w-6xl`/68rem với padding `16px` mobile, `32px` desktop.
@@ -92,65 +94,76 @@ canvas kem + pattern doodle nhẹ
 
 ### 4.2 Storefront hero
 
-Nguồn tham chiếu là banner “Xào Mì! Vietnamese Noodle Banner”. Dùng ngôn ngữ tạo hình của ảnh, **không dùng đĩa mì lớn** vì không có asset phù hợp và sẽ làm hero nặng/nhòe ở mobile.
+Nguồn tham chiếu là banner "Xào Mì! Vietnamese Noodle Banner". Dùng ngôn ngữ tạo hình của ảnh (mái hiên sọc, nền đỏ có nét vẽ tay, vệt vàng, chữ kem viền đỏ) nhưng **không dùng đĩa mì** và **không dùng panel kem chứa nhiều thông tin**.
 
-#### Hình học desktop (từ 896px)
+Nguyên tắc: hero chỉ có **một thông điệp, một hành động chính, một hành động phụ, một dòng thông tin**. Mọi thứ khác (địa chỉ, giá, tính năng) ở lại phần menu.
+
+#### Thứ tự ưu tiên thị giác
+
+1. Thương hiệu: logo, `Xào Mì!`, câu chào/slogan.
+2. CTA chính: **Đặt qua Xanh SM Ngon** (teal, cao ≥ 56px, nút mạnh nhất hero).
+3. CTA phụ: **Nhắn Zalo để phản ánh** (nền kem đặc, chữ đỏ đậm, cao ≥ 48px).
+4. Thông tin nhỏ: giờ mở cửa và `Chỉ đường` trên một khối mờ, ngăn bằng đường nét đứt.
+
+#### Desktop (từ 896px)
 
 ```text
 ┌──────────────────────── striped awning ────────────────────────┐
-│  [logo]  Xào Mì!                         ┌─ cream order panel ┐ │
-│          yellow brush                    │ [turquoise CTA]    │ │
-│          Mì nóng, nước mát.              │ Maps │ hours       │ │
-│                                            │ Zalo              │ │
+│  [logo]  Xào Mì!  ///             ┆  [ Đặt qua Xanh SM Ngon ↗ ] │
+│          ~~~~~ brush              ┆  [ Nhắn Zalo để phản ánh ]   │
+│          Mì nóng, nước mát.       ┆  ◷ T2–T6: …      ⌖ Chỉ đường │
+│                                   ┆  ◷ T7–CN: …                 │
 └────────────────────────────────────────────────────────────────┘
 ```
 
-- Hero: rộng tối đa `68rem`; viền 2px, đáy 8px; radius `32px 32px 48px 48px`.
-- Mái hiên: cao khoảng 13–15% hero; sọc kem/đỏ bằng nhau; nếp scallop và bóng đổ thuộc `StorefrontAwning`.
-- Grid desktop: brand : info là `1.02 : 0.98`, gap `20px`. Không dùng tỷ lệ cũ khiến panel phải hẹp.
-- Hero không có ảnh đĩa mì nên chiều cao desktop chỉ đủ cho brand và panel; không mở rộng để tạo khoảng đỏ rỗng.
-- Brand lockup căn giữa theo trục dọc. Logo mặc định 128–160px desktop; wordmark là trọng tâm trái, slogan thấp hơn brush vàng.
-- Nền đỏ là gradient/vignette ấm; doodle nếu có phải opacity thấp và nằm sau text.
+- Hero rộng tối đa `68rem`, radius `2rem` đều, không viền dày.
+- Grid: brand `1.1fr` : actions `0.9fr`, gap `2.5rem`. Cột actions ngăn với brand bằng một đường dọc nét đứt (`2px dashed`, 35% màu chữ).
+- Brand lockup căn giữa theo trục dọc; logo có viền kem dày và bóng mềm.
+- Chiều cao hero chỉ đủ nội dung. Không kéo cao để tạo khoảng đỏ rỗng.
 
-#### Hero panel
+#### Nền và trang trí
 
-- Panel ngoài: kem sáng, radius không đối xứng mềm `48px 48px 38px 44px`, padding 10–14px, viền kem sáng.
-- CTA: pill xanh ngọc full-width, cao tối thiểu 48px; text `Đặt qua Xanh SM Ngon`, icon external. Giữ link thật tới `channels.xanh.url` và tracking event `xanh`.
-- Khối thông tin bên dưới là **một surface chung**, không phải ba card:
-  - hàng trên: Google Maps | Giờ mở cửa, divider dọc;
-  - hàng dưới: Zalo, divider ngang;
-  - Maps/Zalo là anchor toàn hàng/ô; giờ mở cửa là thông tin tĩnh.
-- Label mờ hơn value; Maps/điện thoại/giờ dùng đỏ gạch. Nút `Nhắn Zalo` là nút phụ vàng nhỏ, không cạnh tranh CTA xanh.
-- Chỉ dùng `Google Maps`, không render lại địa chỉ dài trong hero. URL Maps và Zalo lấy từ cấu hình/code hiện có.
+- Nền: **màu đặc `--hero-paper` luôn được khai báo bằng `background-color`**, chỉ phủ thêm lớp ấm rất nhẹ và lớp tối ở góc dưới. Không dùng lớp sáng lớn: chữ kem phải luôn đạt tương phản trên mọi theme. (Theme mùa chỉ ghi đè `background-image`, nên nếu thiếu `background-color` hero sẽ trong suốt.)
+- Họa tiết nét vẽ tay (sao 4 cánh, vòng mì, lá) màu kem nhạt, opacity ≈ 15%, tile `15rem`, nằm sau mọi nội dung (`.menu-hero-inner::before`, `z-index: -1`).
+- Vệt vàng 3 nét cạnh tên quán: chỉ từ 640px trở lên.
+- Theme mùa override nền riêng; họa tiết vẫn dùng chung ở mật độ thấp.
+
+#### Dòng thông tin
+
+- Giờ mở cửa: mỗi khung giờ một dòng (`T2 – T6: 09:00 – 23:59`, `T7 – CN: …`). Hai khung giống nhau thì gộp `… mỗi ngày`. Dùng `tabular-nums`.
+- `Chỉ đường` là link gạch chân, mở Google Maps, giữ tracking `maps`.
+- Không render địa chỉ dài, không hiện số điện thoại/tên người liên hệ trong hero (số Zalo nằm trong `aria-label` của nút).
 
 #### Mobile và tablet (dưới 896px)
 
 1. Brand lockup.
 2. CTA Xanh full-width.
-3. Maps.
-4. Giờ mở cửa.
-5. Zalo.
+3. CTA Zalo full-width.
+4. Dòng thông tin: giờ bên trái, `Chỉ đường` bên phải, tự xuống hàng nếu hẹp.
 
-- Hero chuyển một cột, không ép hai cột co lại.
-- Maps và giờ có divider ngang; thời gian luôn không xuống hàng trong cùng một dải.
-- Body text tối thiểu 16px; cỡ nhãn có thể 13–14px.
-- `min-w-0` ở mọi child flex có text; icon/logo/sticker `shrink-0`.
+- Hero một cột; đường dọc nét đứt chuyển thành đường ngang nét đứt phía trên dòng thông tin.
+- Body tối thiểu 16px; nhãn 13–14px. `min-w-0` cho child flex có text; icon/logo `shrink-0`.
 
 ### 4.3 Navigation và filters
 
 - `menu-navigation` sticky, nền trùng canvas khi stuck; không dùng backdrop hoặc dải màu khác khiến nền bị cắt.
-- Tab nền tảng: `Xanh SM Ngon`, `GrabFood`, `beFood`; selected state lấy đúng màu platform.
-- CTA navigation là bản tiện ích nhỏ hơn CTA hero. Khi navigation chưa sticky nó là outline/tint; khi sticky mới có fill xanh.
-- Filter category là chip có selected state rõ bằng `aria-pressed`; không dùng badge trang trí không có ý nghĩa.
+- **Tab nền tảng** (`Xanh SM Ngon`, `GrabFood`, `beFood`): tab đang chọn là nút đặc màu platform, chữ đậm 800, viền + chân đế đậm hơn. Tab không chọn **lùi lại**: nền trong suốt, viền nét đứt xám ấm, chữ `--muted-foreground`; hover mới hiện tint. Selected phải nhận ra được không chỉ bằng màu (đậm, viền, chân đế).
+- **CTA navigation** là bản tiện ích nhỏ hơn CTA hero (`min-h-11`, `rounded-xl`, `text-sm`), giữ nguyên style fill màu platform ban đầu ở cả hai trạng thái.
+- **Filter category**: chip cao 36px, có **số món** trong badge nhỏ. Đang chọn: nền `--primary`, chữ đậm, badge sáng, `aria-pressed`. Không chọn: nền trong suốt, viền nét đứt (cùng ngôn ngữ với tab không chọn), chữ muted. Trên mobile hàng chip cuộn ngang, mép phải mờ dần để gợi ý còn chip phía sau; ẩn scrollbar. Khi navigation sticky có đường nét đứt phía dưới.
+- Không có ô tìm kiếm và không có tiêu đề kênh lặp lại tên tab. Board đầu tiên cách hàng chip chỉ khoảng `8px` (không cộng dồn padding + margin).
 
 ### 4.4 Menu boards và món
 
-- Heading category: dải vàng sọc nhẹ, icon tròn đỏ, count ở bên phải.
+- Heading category: dải vàng sọc nhẹ, icon tròn đỏ, count `N món` bên phải.
 - Category board: nền kem sáng + một viền caramel; không thêm card con cho từng món.
-- Desktop từ `sm`: grid hai cột. Mobile: một cột.
-- Dish row: ảnh 68px mobile/80px desktop, tên đậm, tag thật (bán chạy/nên thử/món mới), mô tả tối giản, giá tabular. Divider đứt chỉ tách món cùng board.
+- Desktop từ `sm` (640px): grid hai cột. Mobile: một cột.
+- Dish row: ảnh 68px mobile/80px desktop, tên đậm, tag thật (bán chạy/nên thử/món mới), mô tả tối giản, giá `tabular-nums`.
+- Divider đứt chỉ **giữa** các món cùng board. Hàng cuối của board không có divider (tránh vạch ngay sát viền board).
+- Món hết (`available = false`): giảm opacity, không ẩn layout.
 - Sticker category chỉ nằm ở mép/corner, không che tên category, count, giá hoặc ảnh món.
-- Nếu link rời site (Grab/be/Xanh/Maps/Zalo), dùng `ArrowUpRight`; không dùng arrow external cho thao tác nội bộ.
+- Link rời site (Grab/be/Xanh/Maps/Zalo) dùng `ArrowUpRight`; không dùng arrow external cho thao tác nội bộ.
+- Voucher (khi còn hiệu lực): một khối riêng cuối danh sách, viền caramel, tiêu đề + mã đậm + điều kiện; không chen vào giữa các board.
+- Trạng thái rỗng: "Menu quán đang được cập nhật." kèm nút sang GrabFood/beFood; không để trang trắng.
 
 ### 4.5 Theme theo mùa
 
@@ -196,10 +209,15 @@ admin header: logo, “Xào Mì! / Quản lý quán”, xem thực đơn, đăng
 
 ## 7. Checklist trước khi ship UI
 
-- [ ] CTA Xanh trong hero là yếu tố màu mạnh nhất.
+- [ ] Hero chỉ có: brand, CTA Xanh, CTA Zalo, một dòng giờ + Chỉ đường.
+- [ ] CTA Xanh trong hero là yếu tố màu mạnh nhất; CTA navigation giữ style fill ban đầu.
+- [ ] Hero không có shadow; chữ kem rõ trên default và từng theme mùa.
 - [ ] Hero không có khoảng đỏ trống lớn khi không dùng ảnh món.
-- [ ] Maps, giờ mở cửa, Zalo không overflow ở 360px và desktop.
+- [ ] Hero không overflow ở 360px; hai nút không bị cắt chữ; giờ mở cửa không đè lên `Chỉ đường`.
+- [ ] Tab đang chọn nổi bật rõ, các tab khác mờ nhưng vẫn đạt tương phản đọc được.
 - [ ] Tab/filter sticky không che nền hoặc nội dung lúc scroll.
+- [ ] Hàng cuối mỗi board không còn divider sát viền.
 - [ ] Sticker không che text, count, CTA hay ảnh món.
 - [ ] Default và mỗi theme seasonal vẫn cùng hierarchy/menu density.
-- [ ] `/menuquan`, `/`, `/admin` build thành công; link Maps, Zalo, Xanh và tracking vẫn hoạt động.
+- [ ] `focus-visible` thấy rõ trên nút Zalo, tab, chip, `Chỉ đường`.
+- [ ] `/menuquan`, `/`, `/admin` build thành công; link Maps, Zalo, Xanh và tracking vẫn hoạt động. Lưu ý: tracking `search_found_*` / `search_empty_*` không còn vì đã bỏ ô tìm kiếm.

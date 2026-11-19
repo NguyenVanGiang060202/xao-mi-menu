@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 
-import { ArrowUpRight, Clock3, CupSoda, Flame, Layers, MapPin, MessageCircle, Search, Soup, Utensils, X } from "lucide-react";
+import { ArrowUpRight, Clock3, CupSoda, Flame, Layers, MapPin, MessageCircle, Soup, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DishTag } from "@/components/dish-tag";
 import { SeasonGutterStickers, SeasonSticker } from "@/components/season-sticker";
 import { StorefrontAwning } from "@/components/storefront-awning";
 import { formatPrice, getDishTags, themes, type Channel } from "@/lib/menu-data";
 import { channels, defaultShopSchedule, shopDays, shopLocation, type PlatformDraftDish as Dish, type Appearance, type ShopInfo, type Voucher } from "@/lib/catalog";
+import { contactName, zaloNumber, zaloUrl } from "@/lib/contact";
 import { trackingCategories, trackingScrollLevels, type TrackingEvent } from "@/lib/tracking-data";
 const channelNames: Record<Channel, string> = { shop: "Menu quán", grab: "GrabFood", be: "beFood", xanh: "Xanh SM Ngon" };
 const categoryIcons: Record<string, typeof Soup> = {
@@ -28,9 +29,6 @@ const channelStyles: Record<Channel, string> = {
   be: "menu-channel-be",
   xanh: "menu-channel-xanh",
 };
-const zaloNumber = "0393508079";
-const zaloUrl = `https://zalo.me/${zaloNumber}`;
-const contactName = "Văn Giang";
 const compactShopDays = { weekday: "T2 – T6", weekend: "T7 – CN" } as const;
 
 function sendMenuEvents(...events: TrackingEvent[]) {
@@ -61,11 +59,9 @@ export function MenuPage({
 }: MenuPageProps) {
   const [channel, setChannel] = useState<Channel>(initialChannel);
   const [category, setCategory] = useState("Tất cả");
-  const [query, setQuery] = useState("");
   const [navigationStuck, setNavigationStuck] = useState(false);
   const navigationMarker = useRef<HTMLDivElement>(null);
   const viewSent = useRef(false);
-  const lastSearch = useRef("");
   const lastScrollLevel = useRef(0);
   const theme = appearance.theme;
   const schedule = shop.schedule ?? defaultShopSchedule;
@@ -100,22 +96,10 @@ export function MenuPage({
 
   const visibleDishes = useMemo(() => menu.filter((dish) => {
     const matchesCategory = category === "Tất cả" || dish.category === category;
-    const matchesQuery = `${dish.name} ${dish.description}`.toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi"));
-    return matchesCategory && matchesQuery;
-  }), [category, query, menu]);
+    return matchesCategory;
+  }), [category, menu]);
 
-  const searchTerm = query.trim().toLocaleLowerCase("vi");
-  const hasSearchResults = visibleDishes.length > 0;
-  useEffect(() => {
-    if (!trackTraffic || searchTerm.length < 2 || searchTerm === lastSearch.current) return;
-    const timer = window.setTimeout(() => {
-      lastSearch.current = searchTerm;
-      sendMenuEvents(hasSearchResults ? `search_found_${channel}` : `search_empty_${channel}`);
-    }, 600);
-    return () => window.clearTimeout(timer);
-  }, [channel, hasSearchResults, searchTerm, trackTraffic]);
-
-  const trackScroll = trackTraffic && category === "Tất cả" && !query && menu.length > 0;
+  const trackScroll = trackTraffic && category === "Tất cả" && menu.length > 0;
   useEffect(() => {
     if (!trackScroll) return;
     function recordScrollDepth() {
@@ -143,16 +127,10 @@ export function MenuPage({
     setCategory(name);
   }
 
-  function updateQuery(value: string) {
-    if (!value.trim()) lastSearch.current = "";
-    setQuery(value);
-  }
-
   function selectChannel(next: Channel) {
     if (trackTraffic && next !== channel) sendMenuEvents(`tab_${next}`);
     setChannel(next);
     setCategory("Tất cả");
-    updateQuery("");
   }
 
   function trackOrder(event: MouseEvent<HTMLAnchorElement>) {
@@ -180,7 +158,7 @@ export function MenuPage({
               <div className="menu-brand-lockup flex min-w-0 items-center gap-3 sm:gap-5">
                 <div className="menu-brand-mark relative shrink-0">
                   <div className="menu-logo flex size-20 overflow-hidden rounded-full sm:size-28">
-                    <img src={appearance.logo || "/xao-mi-logo.jpg"} alt="" width={112} height={112}
+                    <img src={appearance.logo || "/xao-mi-logo.png"} alt="" width={112} height={112}
                       className={`size-full object-contain ${appearance.logo ? "" : "scale-[1.48]"}`} />
                   </div>
                   <SeasonSticker theme={theme} movable />
@@ -200,11 +178,11 @@ export function MenuPage({
                 <span className="menu-cta-label">Đặt qua Xanh SM Ngon</span><ArrowUpRight size={20} aria-hidden="true" />
               </a>
               <a href={zaloUrl} target="_blank" rel="noreferrer"
-                aria-label={`Nhắn Zalo ${zaloNumber}, ${contactName}`}
+                aria-label={`Nhắn Zalo để phản ánh ${zaloNumber}, ${contactName}`}
                 onClick={(event) => trackLink(event, "zalo", "zalo_contact")}
                 onAuxClick={(event) => trackLink(event, "zalo", "zalo_contact")}
                 className="menu-zalo-cta inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-base font-bold">
-                <MessageCircle size={20} aria-hidden="true" />Nhắn Zalo đặt món
+                <MessageCircle size={20} aria-hidden="true" />Nhắn Zalo để phản ánh
               </a>
               <ul className="menu-hero-meta" aria-label="Thông tin quán">
                 <li className="menu-hero-hours">
@@ -235,17 +213,16 @@ export function MenuPage({
             <span className="menu-cta-label">Đặt qua Xanh SM Ngon</span><ArrowUpRight size={16} aria-hidden="true" />
           </a>
         </div>
-        {menu.length > 0 && <nav className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-3 sm:px-8" aria-label="Danh mục món">
-          {categories.map((item) => <Button key={item} variant="ghost" aria-pressed={category === item} onClick={() => selectCategory(item)} className={`menu-filter h-8 shrink-0 rounded-full border px-3 text-xs font-semibold ${category === item ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "border-border bg-card text-muted-foreground hover:bg-secondary"}`}><span>{item}</span></Button>)}
+        {menu.length > 0 && <nav className="menu-filter-row mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-3 sm:px-8" aria-label="Danh mục món">
+          {categories.map((item) => {
+            const count = item === "Tất cả" ? menu.length : menu.filter((dish) => dish.category === item).length;
+            const active = category === item;
+            return <Button key={item} variant="ghost" aria-pressed={active} onClick={() => selectCategory(item)} className={`menu-filter h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold ${active ? "border-primary bg-primary font-bold text-primary-foreground shadow-sm hover:bg-primary/90" : "border-dashed border-border bg-transparent text-muted-foreground hover:bg-secondary"}`}><span>{item}<b className="menu-filter-count" aria-label={`${count} món`}>{count}</b></span></Button>;
+          })}
         </nav>}
       </section>
 
       <div key={channel} className="menu-content mx-auto max-w-6xl px-4 sm:px-8">
-        <section className="flex flex-col gap-2 pt-3 pb-1 sm:flex-row sm:items-center sm:gap-4 sm:pt-4">
-          <h2 className={`menu-channel-heading ${channelStyles[channel]} text-2xl font-extrabold sm:text-3xl`}>{channelNames[channel]}</h2>
-          {menu.length > 0 && <label className="menu-search flex h-11 w-full items-center gap-2 rounded-full border border-border bg-card px-4 text-muted-foreground sm:max-w-[290px]"><Search size={17} aria-hidden="true" /><input value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="Tìm món bạn thích..." className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground" aria-label="Tìm món" />{query && <Button variant="ghost" size="icon" className="size-8" onClick={() => updateQuery("")} aria-label="Xóa tìm kiếm"><X size={15} /></Button>}</label>}
-        </section>
-
         <div key={category} className="menu-board">
         {grouped.length ? grouped.map((group) => <section id={`category-${group.name}`} key={group.name} className="menu-category scroll-mt-36 mb-6">
           <SeasonGutterStickers theme={theme} index={categories.indexOf(group.name) - 1} seed={now} />

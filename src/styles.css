@@ -178,8 +178,6 @@
 .menu-hero {
   --awning-stripe: clamp(1.25rem, 4vw, 2.75rem);
   --awning-stripes: repeating-linear-gradient(90deg, var(--awning-light, #fff0c2) 0 var(--awning-stripe), var(--awning-dark, #d54b37) var(--awning-stripe) calc(2 * var(--awning-stripe)));
-  /* Same line-art motif as the page canvas, in cream so it reads on the dark facade. */
-  --hero-doodles: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='136' viewBox='0 0 160 136' fill='none' stroke='%23ffe8bc' stroke-opacity='.14' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 39h30c-2 10-8 15-15 15S22 49 20 39Zm8-6c-4-6 5-7 1-13m9 13c-4-6 5-7 1-13M88 103l24-13m-21 18 24-13M130 30v12m-6-6h12M49 103v10m-5-5h10'/%3E%3Ccircle cx='80' cy='52' r='2' fill='%23ffe8bc' fill-opacity='.2' stroke='none'/%3E%3Ccircle cx='145' cy='111' r='2' fill='%23ffe8bc' fill-opacity='.2' stroke='none'/%3E%3C/svg%3E");
   isolation: isolate;
   margin-inline: auto;
   width: min(calc(100% - 2rem), 68rem);
@@ -187,11 +185,9 @@
   color: var(--hero-ink, #fff4d6);
   background-color: var(--hero-paper, #ae3126);
   background-image:
-    radial-gradient(ellipse 62% 75% at 28% 62%, color-mix(in srgb, var(--hero-paper, #ae3126) 88%, #ffd6a8) 0%, transparent 70%),
-    linear-gradient(165deg, color-mix(in srgb, var(--hero-paper, #ae3126) 92%, #d9492f), var(--hero-paper, #ae3126) 55%, color-mix(in srgb, var(--hero-paper, #ae3126) 84%, #3d0d0d));
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--hero-edge, #873025) 55%, transparent),
-    0 1.2rem 1.8rem -1.2rem color-mix(in srgb, var(--hero-edge, #873025) 65%, transparent);
+    radial-gradient(ellipse 62% 80% at 28% 55%, #ff8a4a24, transparent 70%),
+    linear-gradient(165deg, transparent 45%, #0000002e);
+  box-shadow: none;
 }
 
 @media (min-width: 40rem) {
@@ -363,7 +359,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--hero-doodles, none) 0 0 / 10rem auto;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='210' viewBox='0 0 240 210' fill='none' stroke='%23ffe9c9' stroke-opacity='.15' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M40 20c2 12 6 16 18 18-12 2-16 6-18 18-2-12-6-16-18-18 12-2 16-6 18-18Z'/%3E%3Cpath d='M178 128c2 9 5 12 14 14-9 2-12 5-14 14-2-9-5-12-14-14 9-2 12-5 14-14Z'/%3E%3Cpath d='M120 40c10-12 28-8 26 6s-22 12-22-2 16-14 22-6'/%3E%3Cpath d='M52 150c14-18 34-18 44-6-12 14-32 18-44 6Zm8 2c10-6 20-8 30-6'/%3E%3Cpath d='M205 40c6-8 16-4 14 4s-14 6-14-1'/%3E%3C/svg%3E") 0 0 / 15rem auto;
   pointer-events: none;
 }
 
@@ -437,10 +433,28 @@
   color: var(--channel-text);
 }
 
-.menu-channel-tab { background: var(--channel-tint); color: #302508; }
+/* Platform tabs: the selected one is solid and raised, the others recede */
+.menu-channel-tab {
+  border: 2px dashed color-mix(in srgb, var(--muted-foreground) 38%, transparent);
+  background: transparent;
+  color: var(--muted-foreground);
+  font-weight: 700;
+}
+.menu-channel-tab:hover { background: var(--channel-tint); color: #302508; }
 .menu-channel-tab[aria-selected="true"], .menu-channel-cta {
   background: var(--channel-color);
   color: var(--channel-text);
+}
+.menu-channel-tab[aria-selected="true"] {
+  border: 2px solid color-mix(in srgb, var(--channel-color) 60%, #1b1208);
+  font-weight: 800;
+  box-shadow: 0 0.22rem 0 color-mix(in srgb, var(--channel-color) 60%, #1b1208), 0 0.8rem 1rem -0.7rem #3d2a1599;
+}
+
+/* No divider under the last row of a board (it sat right above the board's own border) */
+.menu-category-items > .menu-dish:last-child { border-bottom-color: transparent; }
+@media (min-width: 40rem) {
+  .menu-category-items > .menu-dish:nth-last-child(2):nth-child(odd) { border-bottom-color: transparent; }
 }
 .menu-channel-cta:hover { filter: brightness(0.93); }
 .menu-channel-cta:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; }
@@ -1116,4 +1130,38 @@
 @media (min-width: 64rem) {
   .admin-navigation { position: sticky; top: 1rem; grid-template-columns: 1fr; }
   .admin-navigation button { justify-content: flex-start; gap: 0.65rem; padding-inline: 0.85rem; font-size: 0.875rem; }
+}
+
+
+/* ---- Filters row ---- */
+.menu-page .menu-board > .menu-category:first-child { margin-top: 0.5rem; }
+.menu-navigation[data-stuck="true"] { border-bottom: 1px dashed color-mix(in srgb, var(--border) 90%, transparent); }
+
+.menu-filter-row { scrollbar-width: none; }
+.menu-filter-row::-webkit-scrollbar { display: none; }
+@media (max-width: 39.999rem) {
+  .menu-filter-row { mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); }
+}
+
+.menu-filter-count {
+  display: inline-grid;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  margin-left: 0.4rem;
+  padding-inline: 0.3rem;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.menu-filter[aria-pressed="true"] .menu-filter-count { background: #ffffff38; }
+
+
+/* Touch screens: let a finger tap flutter the awning, and drop the scallop mask while it ripples */
+@media (pointer: coarse) {
+  .menu-awning { pointer-events: auto; }
+  .menu-awning-valance[data-rippling="true"] { mask: none; }
 }
