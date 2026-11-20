@@ -2,7 +2,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowDownUp, ArrowLeft, ChartNoAxesColumnIncreasing, Check, ImagePlus, LogOut, Menu, Monitor, Palette, Pencil, Plus, RefreshCw, Save, Smartphone, Trash2, Utensils } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, ChartNoAxesColumnIncreasing, Check, ImagePlus, LogOut, Menu, Monitor, Palette, Pencil, Plus, RefreshCw, Save, Smartphone, TicketPercent, Trash2, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminToast, type AdminNotice, type NotifyAdmin } from "@/components/admin-toast";
 import { DishTag } from "@/components/dish-tag";
@@ -20,10 +20,12 @@ import { PlatformMenuSync } from "./platform-menu-sync";
 import { AppearancePreview } from "./appearance-preview";
 import { AdminTracking } from "./admin-tracking";
 import { ShopMenuOrder } from "./shop-menu-order";
+import { VoucherAdmin } from "./voucher-admin";
 
 const sections = [
   { id: "appearance", label: "Giao diện", icon: Palette },
   { id: "menu", label: "Menu quán", icon: Menu },
+  { id: "vouchers", label: "Voucher", icon: TicketPercent },
   { id: "tracking", label: "Thống kê", icon: ChartNoAxesColumnIncreasing },
 ] as const;
 
@@ -49,6 +51,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
   const [syncingShop, setSyncingShop] = useState(false);
   const [savingMenu, setSavingMenu] = useState(false);
   const [menuDraft, setMenuDraft] = useState<MenuDraft | null>(null);
+  const [voucherDraft, setVoucherDraft] = useState(store.vouchers);
   const [reordering, setReordering] = useState(false);
   const [editingSeason, setEditingSeason] = useState<{ start: number; end: number; originalAppearance: Appearance } | null>(null);
   const [activeSection, setActiveSection] = useState<(typeof sections)[number]["id"]>("appearance");
@@ -276,7 +279,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
               </section>)}
             </div>}
           </section>
-        </> : <>
+        </> : activeSection === "vouchers" ? <VoucherAdmin vouchers={store.vouchers} draft={voucherDraft} onDraftChange={setVoucherDraft} notify={notify} /> : <>
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Cửa hàng của bạn</p><h2 className="mt-1 text-2xl font-bold sm:text-3xl">Giao diện thực đơn</h2><p className="mt-1 text-sm text-muted-foreground">Xào Mì!</p></div><span className="flex items-center gap-1.5 text-xs font-semibold text-accent-foreground"><span className="size-2 rounded-full bg-emerald-600" />Đang hiển thị</span></div>
 
         <section className="admin-sheet">

@@ -1,6 +1,6 @@
 import "server-only";
 import { neon } from "@neondatabase/serverless";
-import { defaultAppearance, dishMatchKey, platformMenus, seedMenus, type Appearance, type MenuDish, type Platform, type PlatformDraftDish, type ShopInfo, type Voucher } from "./catalog";
+import { defaultAppearance, dishMatchKey, platformMenus, seedMenus, voucherChannels, type Appearance, type MenuDish, type Platform, type PlatformDraftDish, type ShopInfo, type Voucher, type VoucherChannel, type VoucherDiscount, type VoucherMap } from "./catalog";
 import { isHolidayTheme } from "./menu-data";
 import { applyMenuOrder } from "./menu-order";
 
@@ -13,9 +13,10 @@ export type Store = PlatformSnapshots & {
   appearance: Appearance;
   draft: Appearance | null;
   seasonSchedules: SeasonSchedule[];
-  vouchers: { grab: Voucher[]; be: Voucher[] };
+  vouchers: VoucherMap;
 };
-const defaults: Store = { dishes: seedMenus.shop, shop: { branch: "", hours: "" }, appearance: defaultAppearance, draft: null, seasonSchedules: [], vouchers: { grab: [], be: [] } };
+const emptyVouchers = (): VoucherMap => ({ shop: [], xanh: [], grab: [], be: [] });
+const defaults: Store = { dishes: seedMenus.shop, shop: { branch: "", hours: "" }, appearance: defaultAppearance, draft: null, seasonSchedules: [], vouchers: emptyVouchers() };
 const shopPhotos = new Map(seedMenus.shop.map(dish => [dish.id, dish.image]));
 function database() {
   if (!process.env.DATABASE_URL) throw new Error("Chưa cấu hình DATABASE_URL.");
@@ -37,7 +38,8 @@ export async function readStoreWithMenuRevision(): Promise<{ store: Store; menuR
   const seasons = row?.data?.seasonSchedules ?? (row?.data?.schedule ? [row.data.schedule] : []);
   const seasonSchedules: SeasonSchedule[] = [...seasons, ...(row?.data?.holidaySchedules ?? [])];
   seasonSchedules.sort((a, b) => a.start - b.start);
-  return { store: { ...store, dishes, seasonSchedules }, menuRevision: row?.revision ?? "" };
+  const vouchers = normalizeVouchers(row?.data?.vouchers ?? store.vouchers);
+  return { store: { ...store, dishes, seasonSchedules, vouchers }, menuRevision: row?.revision ?? "" };
 }
 
 export async function saveValue<K extends keyof Store>(key: K, value: Store[K]) {
@@ -167,5 +169,53 @@ export async function changeSeasonSchedule(schedule: SeasonSchedule | null, prev
       AND COALESCE(menu_state.data->'schedule', 'null'::jsonb) = ${JSON.stringify(row?.legacy ?? null)}::jsonb
     RETURNING id`;
   return rows.length === 1 ? undefined : "Lịch đã thay đổi ở phiên khác. Hãy tải lại trang.";
+}
+
+function positiveAmount(value: unknown) {
+  const amount = typeof value === "number" ? Math.round(value) : NaN;
+  return Number.isSafeInteger(amount) && amount > 0 && amount <= 100_000_000 ? amount : undefined;
+}
+
+function normalizeDiscount(value: unknown): VoucherDiscount | null {
+  if (!value || typeof value !== "object") return null;
+  const discount = value as Record<string, unknown>;
+  const amount = typeof discount.value === "number" ? Math.round(discount.value) : NaN;
+  if (discount.kind === "percent" && Number.isSafeInteger(amount) && amount >= 1 && amount <= 100) {
+    const maxDiscount = positiveAmount(discount.maxDiscount);
+    return { kind: "percent", value: amount, ...(maxDiscount ? { maxDiscount } : {}) };
+  }
+  if (discount.kind === "amount" && positiveAmount(amount)) {
+    return { kind: "amount", value: amount };
+  }
+  return null;
+}
+
+function normalizeVoucher(value: unknown, channel: VoucherChannel, index: number): Voucher | null {
+  if (!value || typeof value !== "object") return null;
+  const voucher = value as Record<string, unknown>;
+  const title = typeof voucher.title === "string" ? voucher.title.trim() : "";
+  if (!title) return null;
+  const discount = normalizeDiscount(voucher.discount);
+  return {
+    // Voucher cũ chưa có id hoặc mức giảm: giữ lại ở trạng thái tắt để admin sửa, không hiện cho khách.
+    id: typeof voucher.id === "string" && voucher.id ? voucher.id : `legacy-${channel}-${index}`,
+    title,
+    code: typeof voucher.code === "string" ? voucher.code.trim() : "",
+    discount: discount ?? { kind: "amount", value: 0 },
+    minOrder: positiveAmount(voucher.minOrder),
+    terms: typeof voucher.terms === "string" ? voucher.terms.trim() : "",
+    enabled: Boolean(discount) && voucher.enabled !== false,
+  };
+}
+
+export function normalizeVouchers(value: unknown): VoucherMap {
+  const source = value && typeof value === "object" ? value as Partial<Record<VoucherChannel, unknown>> : {};
+  return Object.fromEntries(voucherChannels.map(channel => {
+    const list = Array.isArray(source[channel]) ? source[channel] as unknown[] : [];
+    const vouchers = list
+      .map((voucher, index) => normalizeVoucher(voucher, channel, index))
+      .filter((voucher): voucher is Voucher => voucher !== null);
+    return [channel, vouchers];
+  })) as VoucherMap;
 }
 

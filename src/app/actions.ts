@@ -200,18 +200,32 @@ export async function updateShop(form: FormData) {
   revalidatePath("/");
 }
 
+const voucherDiscountSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("percent"), value: z.number().int().min(1).max(100), maxDiscount: z.number().int().min(1).max(100000000).optional() }),
+  z.object({ kind: z.literal("amount"), value: z.number().int().min(1).max(100000000) }),
+]);
 const voucherSchema = z.object({
+  id: z.string().trim().min(1).max(80),
   title: z.string().trim().min(1).max(100),
   code: z.string().trim().max(40),
-  terms: z.string().trim().min(1).max(350),
-  start: z.iso.datetime(),
-  end: z.iso.datetime(),
-}).refine(voucher => Date.parse(voucher.end) > Date.parse(voucher.start));
+  discount: voucherDiscountSchema,
+  minOrder: z.number().int().min(1).max(100000000).optional(),
+  terms: z.string().trim().max(350),
+  enabled: z.boolean(),
+});
 
 export async function updateVouchers(value: unknown) {
   await requireAdmin();
-  const vouchers = z.object({ grab: z.array(voucherSchema).max(20), be: z.array(voucherSchema).max(20) }).parse(value);
-  await saveValue("vouchers", vouchers);
+  const parsed = z.object({
+    shop: z.array(voucherSchema).max(20),
+    xanh: z.array(voucherSchema).max(20),
+    grab: z.array(voucherSchema).max(20),
+    be: z.array(voucherSchema).max(20),
+  }).safeParse(value);
+  if (!parsed.success) return "Thông tin voucher không hợp lệ. Kiểm tra tiêu đề, mức giảm và mã.";
+  await saveValue("vouchers", parsed.data);
+  revalidatePath("/");
+  revalidatePath("/menuquan");
 }
 
 export async function updateShopMenu(value: unknown) {

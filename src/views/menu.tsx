@@ -7,8 +7,9 @@ import { DishTag } from "@/components/dish-tag";
 import { SeasonGutterStickers, SeasonSticker } from "@/components/season-sticker";
 import { StorefrontAwning } from "@/components/storefront-awning";
 import { formatPrice, getDishTags, themes, type Channel } from "@/lib/menu-data";
-import { channels, defaultShopSchedule, shopDays, shopLocation, type PlatformDraftDish as Dish, type Appearance, type ShopInfo, type Voucher } from "@/lib/catalog";
+import { channels, defaultShopSchedule, shopDays, shopLocation, type PlatformDraftDish as Dish, type Appearance, type ShopInfo, type VoucherMap } from "@/lib/catalog";
 import { contactName, zaloNumber, zaloUrl } from "@/lib/contact";
+import { VoucherList } from "@/components/voucher-list";
 import { trackingCategories, trackingScrollLevels, type TrackingEvent } from "@/lib/tracking-data";
 const channelNames: Record<Channel, string> = { shop: "Menu quán", grab: "GrabFood", be: "beFood", xanh: "Xanh SM Ngon" };
 const categoryIcons: Record<string, typeof Soup> = {
@@ -39,7 +40,7 @@ function sendMenuEvents(...events: TrackingEvent[]) {
 type MenuPageProps = {
   menus: Record<Channel, Dish[]>;
   appearance: Appearance;
-  vouchers: { grab: Voucher[]; be: Voucher[] };
+  vouchers: VoucherMap;
   now: number;
   shop: ShopInfo;
   trackTraffic?: boolean;
@@ -91,8 +92,7 @@ export function MenuPage({
 
   const menu = menus[channel];
   const categories = ["Tất cả", ...new Set(menu.map(dish => dish.category))];
-  const channelVouchers = channel === "grab" || channel === "be" ? vouchers[channel] : [];
-  const activeVouchers = channelVouchers.filter(voucher => Date.parse(voucher.start) <= now && now < Date.parse(voucher.end));
+  const activeVouchers = vouchers[channel].filter(voucher => voucher.enabled);
 
   const visibleDishes = useMemo(() => menu.filter((dish) => {
     const matchesCategory = category === "Tất cả" || dish.category === category;
@@ -237,7 +237,7 @@ export function MenuPage({
           </div>
         </section>) : <div className="mb-8 rounded-3xl border border-dashed border-primary/25 bg-card py-12 text-center text-sm text-muted-foreground">{menu.length ? "Chưa tìm thấy món phù hợp." : "Menu quán đang được cập nhật."}{!menu.length && <div className="mt-3 flex justify-center gap-3"><Button variant="outline" onClick={() => selectChannel("grab")}>Xem menu GrabFood</Button><Button variant="outline" onClick={() => selectChannel("be")}>Xem menu beFood</Button></div>}</div>}
 
-        {activeVouchers.length > 0 && <section className="mb-6 rounded border border-border p-4"><h3 className="font-bold">Voucher</h3><ul>{activeVouchers.map(voucher => <li key={voucher.title + voucher.code} className="mt-2 text-sm">{voucher.title} {voucher.code && <strong>{voucher.code}</strong>} · {voucher.terms}</li>)}</ul></section>}
+        <VoucherList vouchers={activeVouchers} />
         </div>
       </div>
     </main>

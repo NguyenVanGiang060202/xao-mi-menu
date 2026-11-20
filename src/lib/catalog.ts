@@ -62,7 +62,27 @@ export function localizeGrabDish<T extends DishText & { category: string; textSo
   };
 }
 export type Appearance = { theme: ThemeName; greeting: string; accent: string; background: string; image: string; logo: string };
-export type Voucher = { title: string; code: string; terms: string; start: string; end: string };
+export const voucherChannels = ["shop", "xanh", "grab", "be"] as const;
+export type VoucherChannel = (typeof voucherChannels)[number];
+export const voucherChannelLabels: Record<VoucherChannel, string> = {
+  shop: "Menu quán",
+  xanh: "Xanh SM Ngon",
+  grab: "GrabFood",
+  be: "beFood",
+};
+export type VoucherDiscount =
+  | { kind: "percent"; value: number; maxDiscount?: number }
+  | { kind: "amount"; value: number };
+export type Voucher = {
+  id: string;
+  title: string;
+  code: string;
+  discount: VoucherDiscount;
+  minOrder?: number;
+  terms: string;
+  enabled: boolean;
+};
+export type VoucherMap = Record<VoucherChannel, Voucher[]>;
 type Hours = { open: string; close: string };
 export type ShopInfo = { branch: string; hours: string; schedule?: { weekday: Hours; weekend: Hours } };
 export const shopLocation = {
