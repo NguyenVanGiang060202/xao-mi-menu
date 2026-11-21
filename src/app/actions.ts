@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { put } from "@vercel/blob";
 import { z } from "zod";
 import { cookieName, equal, isAdmin, signSession } from "@/lib/admin-auth";
-import { changeSeasonSchedule, publishAppearance, publishPlatformMenu, readStore, saveShopDishChanges, saveValue, syncBeShopDishes } from "@/lib/store";
+import { changeSeasonSchedule, publishAppearance, publishPlatformMenu, readStore, savePlatformMenuDishes, saveShopDishChanges, saveValue, syncBeShopDishes } from "@/lib/store";
 import { fetchBeMenu } from "@/lib/be-menu-sync";
 import { fetchGrabMenu, verifyGrabSession } from "@/lib/grab-menu-sync";
 import { clearGrabConnection, grabConnectionStatus, GrabSessionError, GrabSyncError, parseGrabCurl, saveGrabConnection } from "@/lib/grab-connection";
@@ -132,6 +132,49 @@ export async function confirmPlatformMenu(value: unknown) {
     return { ok: false, message: "Menu đã được cập nhật ở phiên khác. Hãy tải lại để duyệt bản mới." };
   }
   return { ok: true, message: `Đã công bố ${dishes.length} món lên tab ${platformMenus[platform].label}.` };
+}
+
+export async function updatePlatformMenu(value: unknown) {
+  await requireAdmin();
+  if (!process.env.DATABASE_URL) return { ok: false, message: "Cần cấu hình DATABASE_URL để lưu menu." };
+  const parsed = z.object({
+    platform: syncTargetSchema,
+    previousSync: z.string().min(1).max(40),
+    changes: z.array(z.object({
+      id: z.string().min(1).max(120),
+      name: z.string().trim().min(1).max(120),
+      price: dishPrice.nullable(),
+      originalPrice: dishPrice.nullable(),
+      available: z.boolean(),
+    })).min(1).max(500),
+  }).safeParse(value);
+  if (!parsed.success) return { ok: false, message: "Thông tin món không hợp lệ. Kiểm tra tên và giá." };
+
+  const { platform, previousSync, changes } = parsed.data;
+  const store = await readStore();
+  const snapshot = store[platformMenus[platform].key];
+  if (!snapshot) return { ok: false, message: "Chưa có bản đồng bộ để chỉnh sửa. Hãy đồng bộ nền tảng này trước." };
+  if (snapshot.syncedAt !== previousSync) return { ok: false, message: "Menu đã thay đổi ở phiên khác. Hãy tải lại trang rồi sửa lại." };
+
+  const byId = new Map(changes.map(change => [change.id, change]));
+  const dishes = snapshot.dishes.map(dish => {
+    const change = byId.get(dish.id);
+    if (!change) return dish;
+    return {
+      ...dish,
+      name: change.name,
+      price: change.price,
+      available: change.available,
+      originalPrice: change.originalPrice === null ? undefined : change.originalPrice,
+    };
+  });
+  if (!await savePlatformMenuDishes(platform, dishes, previousSync)) {
+    return { ok: false, message: "Menu đã thay đổi ở phiên khác. Hãy tải lại trang rồi sửa lại." };
+  }
+  revalidatePath("/");
+  revalidatePath("/menuquan");
+  revalidatePath("/admin");
+  return { ok: true, message: `Đã lưu thay đổi cho ${platformMenus[platform].label}.` };
 }
 
 export async function syncBeToShop() {

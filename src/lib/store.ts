@@ -63,6 +63,21 @@ export async function publishPlatformMenu(platform: Platform, dishes: PlatformDr
   return rows.length === 1;
 }
 
+export async function savePlatformMenuDishes(platform: Platform, dishes: PlatformDraftDish[], previousSync: string) {
+  const sql = database();
+  const { key } = platformMenus[platform];
+  const rows = await sql`UPDATE menu_state
+    SET data = jsonb_set(
+      data,
+      ARRAY[${key}]::text[],
+      (data -> ${key}::text) || jsonb_build_object('dishes', ${JSON.stringify(dishes)}::jsonb),
+      true
+    )
+    WHERE id = 1 AND data -> ${key}::text ->> 'syncedAt' = ${previousSync}
+    RETURNING id`;
+  return rows.length === 1;
+}
+
 async function readShopDishes() {
   const sql = database();
   const [row] = await sql`SELECT data->'dishes' AS dishes, md5(NULLIF(data->'dishes', 'null'::jsonb)::text) AS revision

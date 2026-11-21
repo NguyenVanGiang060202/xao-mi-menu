@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw } from "lucide-react";
+import { Pencil, RefreshCw } from "lucide-react";
 import { confirmPlatformMenu, previewPlatformMenu } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import type { NotifyAdmin } from "@/components/admin-toast";
@@ -10,6 +10,7 @@ import { platformMenus, type Platform, type PlatformDraftDish } from "@/lib/cata
 import { formatPrice } from "@/lib/menu-data";
 import type { PlatformSnapshots } from "@/lib/store";
 import { GrabConnection } from "./grab-connection";
+import { PlatformMenuEditor } from "./platform-menu-editor";
 
 const platformHelp: Record<Platform, string> = {
   grab: "Khi đã kết nối, lấy tiếng Việt và giá gốc từ GrabFood. Món thiếu được bổ sung từ beFood và có nhãn nguồn.",
@@ -24,7 +25,9 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
   const [publishing, setPublishing] = useState(false);
   const [review, setReview] = useState<Review | null>(null);
   const [reconnectRequired, setReconnectRequired] = useState(false);
+  const [editing, setEditing] = useState<Platform | null>(null);
   const busy = Boolean(loading) || publishing;
+  const editingSnapshot = editing ? snapshots[platformMenus[editing].key] : undefined;
   const previewDishes = review?.dishes ?? [];
   const supplementedCount = previewDishes.filter(dish => dish.supplementedFrom).length;
   const groups = new Map<string, typeof previewDishes>();
@@ -85,9 +88,14 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
           {snapshot && <p className="text-xs text-muted-foreground">
             {snapshot.dishes.length} món đã lưu · {new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" }).format(new Date(snapshot.syncedAt))}
           </p>}
-          <Button type="button" className="mt-auto" disabled={busy || Boolean(review)} onClick={() => load(platform)}>
-            <RefreshCw size={15} />{loading === platform ? "Đang lấy món…" : `Đồng bộ ${label}`}
-          </Button>
+          <div className="mt-auto flex flex-wrap gap-2">
+            <Button type="button" disabled={busy || Boolean(review)} onClick={() => load(platform)}>
+              <RefreshCw size={15} />{loading === platform ? "Đang lấy món…" : `Đồng bộ ${label}`}
+            </Button>
+            {snapshot && <Button type="button" variant="outline" disabled={busy || Boolean(review)} onClick={() => setEditing(platform)}>
+              <Pencil size={15} />Sửa món
+            </Button>}
+          </div>
         </div>;
       })}
     </div>
@@ -129,5 +137,6 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
         <Button type="button" variant="outline" disabled={publishing} onClick={() => setReview(null)}>Bỏ bản duyệt</Button>
       </div>
     </form>}
+    {editing && editingSnapshot && <PlatformMenuEditor platform={editing} snapshot={editingSnapshot} notify={notify} onClose={() => setEditing(null)} />}
   </section>;
 }
