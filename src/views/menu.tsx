@@ -138,6 +138,10 @@ export function MenuPage({
     : { url: channels[channel].url, label: `Đặt qua ${channelNames[channel]}`, event: channel };
 
   function trackOrder(event: MouseEvent<HTMLAnchorElement>) {
+    trackLink(event, "xanh");
+  }
+
+  function trackChannelOrder(event: MouseEvent<HTMLAnchorElement>) {
     trackLink(event, order.event);
   }
 
@@ -174,10 +178,10 @@ export function MenuPage({
               </div>
             </div>
             <div className="menu-hero-side">
-              <a href={order.url} target="_blank" rel="noreferrer"
+              <a href={channels.xanh.url} target="_blank" rel="noreferrer"
                 onClick={trackOrder} onAuxClick={trackOrder}
-                className={`menu-order-cta menu-channel-cta ${channelStyles[channel]} inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full px-5 text-base font-extrabold sm:text-lg`}>
-                <span className="menu-cta-label">{order.label}</span><ArrowUpRight size={20} aria-hidden="true" />
+                className="menu-order-cta menu-channel-cta menu-channel-xanh inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full px-5 text-base font-extrabold sm:text-lg">
+                <span className="menu-cta-label">Đặt qua Xanh SM Ngon</span><ArrowUpRight size={20} aria-hidden="true" />
               </a>
               <a href={zaloUrl} target="_blank" rel="noreferrer"
                 aria-label={`Nhắn Zalo để phản ánh ${zaloNumber}, ${contactName}`}
@@ -210,7 +214,7 @@ export function MenuPage({
             {channelOrder.map((key) => <Button key={key} role="tab" aria-selected={channel === key} variant="ghost" onClick={() => selectChannel(key)} className={`menu-channel-tab ${channelStyles[key]} h-11 flex-1 rounded-xl px-2 text-xs font-bold sm:flex-none sm:px-5 sm:text-sm`}><span>{channelNames[key]}</span></Button>)}
           </div>}
           <a href={order.url} target="_blank" rel="noreferrer"
-            onClick={trackOrder} onAuxClick={trackOrder}
+            onClick={trackChannelOrder} onAuxClick={trackChannelOrder}
             className={`menu-channel-cta ${channelStyles[channel]} inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold`}>
             <span className="menu-cta-label">{order.label}</span><ArrowUpRight size={16} aria-hidden="true" />
           </a>
