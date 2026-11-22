@@ -133,11 +133,13 @@ export function MenuPage({
     setCategory("Tất cả");
   }
 
-  function trackOrder(event: MouseEvent<HTMLAnchorElement>) {
-    trackLink(event, "xanh");
-  }
+  const order = channel === "shop"
+    ? { url: shopLocation.mapsUrl, label: "Chỉ đường tới quán", event: "maps" as const }
+    : { url: channels[channel].url, label: `Đặt qua ${channelNames[channel]}`, event: channel };
 
-  const orderChannel = "xanh" as const;
+  function trackOrder(event: MouseEvent<HTMLAnchorElement>) {
+    trackLink(event, order.event);
+  }
 
   const sameHours = schedule.weekday.open === schedule.weekend.open && schedule.weekday.close === schedule.weekend.close;
   const hoursLines = !shop.schedule && shop.hours.trim()
@@ -172,10 +174,10 @@ export function MenuPage({
               </div>
             </div>
             <div className="menu-hero-side">
-              <a href={channels.xanh.url} target="_blank" rel="noreferrer"
+              <a href={order.url} target="_blank" rel="noreferrer"
                 onClick={trackOrder} onAuxClick={trackOrder}
-                className="menu-order-cta menu-channel-cta menu-channel-xanh inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full px-5 text-base font-extrabold sm:text-lg">
-                <span className="menu-cta-label">Đặt qua Xanh SM Ngon</span><ArrowUpRight size={20} aria-hidden="true" />
+                className={`menu-order-cta menu-channel-cta ${channelStyles[channel]} inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full px-5 text-base font-extrabold sm:text-lg`}>
+                <span className="menu-cta-label">{order.label}</span><ArrowUpRight size={20} aria-hidden="true" />
               </a>
               <a href={zaloUrl} target="_blank" rel="noreferrer"
                 aria-label={`Nhắn Zalo để phản ánh ${zaloNumber}, ${contactName}`}
@@ -207,10 +209,10 @@ export function MenuPage({
           {channelOrder.length > 0 && <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:gap-3" role="tablist" aria-label="Chọn nơi đặt món">
             {channelOrder.map((key) => <Button key={key} role="tab" aria-selected={channel === key} variant="ghost" onClick={() => selectChannel(key)} className={`menu-channel-tab ${channelStyles[key]} h-11 flex-1 rounded-xl px-2 text-xs font-bold sm:flex-none sm:px-5 sm:text-sm`}><span>{channelNames[key]}</span></Button>)}
           </div>}
-          <a href={channels[orderChannel].url} target="_blank" rel="noreferrer"
+          <a href={order.url} target="_blank" rel="noreferrer"
             onClick={trackOrder} onAuxClick={trackOrder}
-            className={`menu-channel-cta ${channelStyles[orderChannel]} inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold`}>
-            <span className="menu-cta-label">Đặt qua Xanh SM Ngon</span><ArrowUpRight size={16} aria-hidden="true" />
+            className={`menu-channel-cta ${channelStyles[channel]} inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold`}>
+            <span className="menu-cta-label">{order.label}</span><ArrowUpRight size={16} aria-hidden="true" />
           </a>
         </div>
         {menu.length > 0 && <nav className="menu-filter-row mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-3 sm:px-8" aria-label="Danh mục món">
