@@ -56,7 +56,7 @@ export function MenuPage({
   shop,
   trackTraffic = false,
   initialChannel = "xanh",
-  channelOrder = ["xanh", "grab", "be"],
+  channelOrder = ["xanh", "be", "grab"],
 }: MenuPageProps) {
   const [channel, setChannel] = useState<Channel>(initialChannel);
   const [category, setCategory] = useState("Tất cả");

@@ -16,7 +16,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
     return <MenuPage
       {...menu}
       initialChannel="xanh"
-      channelOrder={["xanh", "grab", "be"]}
+      channelOrder={["xanh", "be", "grab"]}
       trackTraffic={preview === undefined && process.env.VERCEL_ENV !== "preview"}
     />;
   }
@@ -33,7 +33,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
       {...menu}
       appearance={appearance}
       initialChannel="xanh"
-      channelOrder={["xanh", "grab", "be"]}
+      channelOrder={["xanh", "be", "grab"]}
     />
   </>;
 }
