@@ -12,6 +12,7 @@ import { fetchGrabMenu, verifyGrabSession } from "@/lib/grab-menu-sync";
 import { clearGrabConnection, grabConnectionStatus, GrabSessionError, GrabSyncError, parseGrabCurl, saveGrabConnection } from "@/lib/grab-connection";
 import { platformMenus, type Platform, type PlatformDraftDish } from "@/lib/catalog";
 import { themeNames } from "@/lib/menu-data";
+import { applyPlatformDishChanges } from "@/lib/platform-dish";
 import { readMenuTracking } from "@/lib/menu-tracking";
 import { trackingPeriods } from "@/lib/tracking-data";
 
@@ -104,6 +105,13 @@ export async function logout() {
 
 const imageUrl = z.union([z.literal(""), z.url().refine(value => new URL(value).protocol === "https:")]);
 const dishPrice = z.number().int().min(0).max(100000000);
+const platformDishChangeSchema = z.object({
+  id: z.string().min(1).max(120),
+  name: z.string().trim().min(1).max(120),
+  price: dishPrice.nullable(),
+  originalPrice: dishPrice.nullable(),
+  available: z.boolean(),
+});
 
 export async function confirmPlatformMenu(value: unknown) {
   await requireAdmin();
@@ -112,6 +120,7 @@ export async function confirmPlatformMenu(value: unknown) {
     platform: syncTargetSchema,
     previousSync: z.union([z.literal(""), z.iso.datetime()]),
     digest: z.string().regex(/^[a-f0-9]{64}$/),
+    changes: z.array(platformDishChangeSchema).max(2000).optional(),
   }).safeParse(value);
   if (!parsed.success) return { ok: false, message: "Bản duyệt không hợp lệ. Hãy đồng bộ lại." };
   const { platform, digest, previousSync } = parsed.data;
@@ -128,6 +137,7 @@ export async function confirmPlatformMenu(value: unknown) {
   if (menuDigest(dishes) !== digest) {
     return { ok: false, message: "Thực đơn trên nền tảng đã thay đổi. Hãy bỏ bản duyệt và đồng bộ lại." };
   }
+  if (parsed.data.changes?.length) dishes = applyPlatformDishChanges(dishes, parsed.data.changes);
   if (!await publishPlatformMenu(platform, dishes, previousSync)) {
     return { ok: false, message: "Menu đã được cập nhật ở phiên khác. Hãy tải lại để duyệt bản mới." };
   }
@@ -140,13 +150,7 @@ export async function updatePlatformMenu(value: unknown) {
   const parsed = z.object({
     platform: syncTargetSchema,
     previousSync: z.string().min(1).max(40),
-    changes: z.array(z.object({
-      id: z.string().min(1).max(120),
-      name: z.string().trim().min(1).max(120),
-      price: dishPrice.nullable(),
-      originalPrice: dishPrice.nullable(),
-      available: z.boolean(),
-    })).min(1).max(500),
+    changes: z.array(platformDishChangeSchema).min(1).max(500),
   }).safeParse(value);
   if (!parsed.success) return { ok: false, message: "Thông tin món không hợp lệ. Kiểm tra tên và giá." };
 
@@ -156,18 +160,7 @@ export async function updatePlatformMenu(value: unknown) {
   if (!snapshot) return { ok: false, message: "Chưa có bản đồng bộ để chỉnh sửa. Hãy đồng bộ nền tảng này trước." };
   if (snapshot.syncedAt !== previousSync) return { ok: false, message: "Menu đã thay đổi ở phiên khác. Hãy tải lại trang rồi sửa lại." };
 
-  const byId = new Map(changes.map(change => [change.id, change]));
-  const dishes = snapshot.dishes.map(dish => {
-    const change = byId.get(dish.id);
-    if (!change) return dish;
-    return {
-      ...dish,
-      name: change.name,
-      price: change.price,
-      available: change.available,
-      originalPrice: change.originalPrice === null ? undefined : change.originalPrice,
-    };
-  });
+  const dishes = applyPlatformDishChanges(snapshot.dishes, changes);
   if (!await savePlatformMenuDishes(platform, dishes, previousSync)) {
     return { ok: false, message: "Menu đã thay đổi ở phiên khác. Hãy tải lại trang rồi sửa lại." };
   }

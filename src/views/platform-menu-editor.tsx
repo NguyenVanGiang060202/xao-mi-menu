@@ -1,17 +1,15 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
-import { updatePlatformMenu } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import type { NotifyAdmin } from "@/components/admin-toast";
 import { platformMenus, type Platform, type PlatformDraftDish } from "@/lib/catalog";
+import { diffPlatformDishes, type PlatformDishChange } from "@/lib/platform-dish";
 
-type PlatformSnapshot = { dishes: PlatformDraftDish[]; syncedAt: string };
 type EditRow = { id: string; category: string; name: string; price: string; originalPrice: string; available: boolean };
+type CommitResult = { ok: boolean; message?: string };
 
 const formatThousands = (value: number | undefined) => value === undefined ? "" : String(value / 1000);
 
@@ -23,14 +21,14 @@ function parseThousands(text: string): number | null | undefined {
   return value >= 0 && value <= 100000000 ? value : undefined;
 }
 
-export function PlatformMenuEditor({ platform, snapshot, notify, onClose }: {
+export function PlatformMenuEditor({ platform, dishes, hint, onClose, onCommit }: {
   platform: Platform;
-  snapshot: PlatformSnapshot;
-  notify: NotifyAdmin;
+  dishes: PlatformDraftDish[];
+  hint?: string;
   onClose: () => void;
+  onCommit: (changes: PlatformDishChange[]) => Promise<CommitResult> | CommitResult;
 }) {
-  const router = useRouter();
-  const [rows, setRows] = useState<EditRow[]>(() => snapshot.dishes.map(dish => ({
+  const [rows, setRows] = useState<EditRow[]>(() => dishes.map(dish => ({
     id: dish.id,
     category: dish.category,
     name: dish.name,
@@ -41,7 +39,7 @@ export function PlatformMenuEditor({ platform, snapshot, notify, onClose }: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const { label } = platformMenus[platform];
-  const originalById = new Map(snapshot.dishes.map(dish => [dish.id, dish]));
+  const originalById = new Map(dishes.map(dish => [dish.id, dish]));
   const groups = new Map<string, EditRow[]>();
   for (const row of rows) {
     const group = groups.get(row.category);
@@ -55,7 +53,7 @@ export function PlatformMenuEditor({ platform, snapshot, notify, onClose }: {
 
   async function save() {
     if (busy) return;
-    const changes: { id: string; name: string; price: number | null; originalPrice: number | null; available: boolean }[] = [];
+    const edited: PlatformDraftDish[] = [];
     for (const row of rows) {
       const original = originalById.get(row.id);
       if (!original) continue;
@@ -74,10 +72,10 @@ export function PlatformMenuEditor({ platform, snapshot, notify, onClose }: {
         setError(`Giá gốc của "${name}" không hợp lệ.`);
         return;
       }
-      if (name !== original.name || price !== original.price || (originalPrice ?? null) !== (original.originalPrice ?? null) || row.available !== original.available) {
-        changes.push({ id: row.id, name, price, originalPrice, available: row.available });
-      }
+      edited.push({ ...original, name, price, available: row.available, originalPrice: originalPrice === null ? undefined : originalPrice });
     }
+
+    const changes = diffPlatformDishes(dishes, edited);
     if (!changes.length) {
       onClose();
       return;
@@ -86,13 +84,11 @@ export function PlatformMenuEditor({ platform, snapshot, notify, onClose }: {
     setBusy(true);
     setError("");
     try {
-      const result = await updatePlatformMenu({ platform, previousSync: snapshot.syncedAt, changes });
+      const result = await onCommit(changes);
       if (!result.ok) {
-        setError(result.message);
+        setError(result.message ?? "Không lưu được thay đổi. Hãy thử lại.");
         return;
       }
-      notify(result.message, "success");
-      router.refresh();
       onClose();
     } catch {
       setError("Không lưu được thay đổi. Hãy thử lại.");
@@ -106,10 +102,10 @@ export function PlatformMenuEditor({ platform, snapshot, notify, onClose }: {
       <div className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-3 pt-12">
         <SheetHeader className="text-left">
           <SheetTitle>Sửa menu {label}</SheetTitle>
-          <SheetDescription>Chỉnh tên, giá bán, giá gốc và trạng thái món. Giá tính bằng nghìn đồng, để trống nếu chưa có giá.</SheetDescription>
+          <SheetDescription>{hint ?? "Chỉnh tên, giá bán, giá gốc và trạng thái món. Giá tính bằng nghìn đồng, để trống nếu chưa có giá."}</SheetDescription>
         </SheetHeader>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">{rows.length} món · Lưu để cập nhật tab {label}.</p>
+          <p className="text-xs text-muted-foreground">{rows.length} món</p>
           <Button disabled={busy} onClick={() => void save()}><Save size={15} />{busy ? "Đang lưu…" : "Lưu thay đổi"}</Button>
         </div>
         {error && <p role="alert" className="mt-3 rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}

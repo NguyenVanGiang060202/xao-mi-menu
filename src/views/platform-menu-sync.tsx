@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, RefreshCw } from "lucide-react";
-import { confirmPlatformMenu, previewPlatformMenu } from "@/app/actions";
+import { confirmPlatformMenu, previewPlatformMenu, updatePlatformMenu } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import type { NotifyAdmin } from "@/components/admin-toast";
 import { platformMenus, type Platform, type PlatformDraftDish } from "@/lib/catalog";
 import { formatPrice } from "@/lib/menu-data";
+import { applyPlatformDishChanges, diffPlatformDishes, type PlatformDishChange } from "@/lib/platform-dish";
 import type { PlatformSnapshots } from "@/lib/store";
 import { GrabConnection } from "./grab-connection";
 import { PlatformMenuEditor } from "./platform-menu-editor";
@@ -17,7 +18,8 @@ const platformHelp: Record<Platform, string> = {
   be: "Lấy dữ liệu từ gian hàng beFood.",
   xanh: "Lấy danh sách từ beFood và công bố riêng cho tab Xanh SM Ngon.",
 };
-type Review = Extract<Awaited<ReturnType<typeof previewPlatformMenu>>, { ok: true }> & { platform: Platform };
+type Review = Extract<Awaited<ReturnType<typeof previewPlatformMenu>>, { ok: true }> & { platform: Platform; baseline: PlatformDraftDish[] };
+type Editing = { platform: Platform; mode: "published" | "review" };
 
 export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapshots & { notify: NotifyAdmin; menus: Record<Platform, PlatformDraftDish[]> }) {
   const router = useRouter();
@@ -25,9 +27,9 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
   const [publishing, setPublishing] = useState(false);
   const [review, setReview] = useState<Review | null>(null);
   const [reconnectRequired, setReconnectRequired] = useState(false);
-  const [editing, setEditing] = useState<Platform | null>(null);
+  const [editing, setEditing] = useState<Editing | null>(null);
   const busy = Boolean(loading) || publishing;
-  const editingSnapshot = editing ? snapshots[platformMenus[editing].key] : undefined;
+  const editingSnapshot = editing?.mode === "published" ? snapshots[platformMenus[editing.platform].key] : undefined;
   const previewDishes = review?.dishes ?? [];
   const supplementedCount = previewDishes.filter(dish => dish.supplementedFrom).length;
   const groups = new Map<string, typeof previewDishes>();
@@ -41,7 +43,7 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
     try {
       const result = await previewPlatformMenu(platform);
       if (result.ok) {
-        setReview({ ...result, platform });
+        setReview({ ...result, platform, baseline: result.dishes });
         notify(`Đã tải ${result.dishes.length} món. Xem lại trước khi công bố.`, "success");
       } else {
         if (result.needsGrabConnection) setReconnectRequired(true);
@@ -58,7 +60,8 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
     if (!review || !review.canPublish || busy) return;
     setPublishing(true);
     try {
-      const result = await confirmPlatformMenu({ platform: review.platform, previousSync: review.previousSync, digest: review.digest });
+      const changes = diffPlatformDishes(review.baseline, review.dishes);
+      const result = await confirmPlatformMenu({ platform: review.platform, previousSync: review.previousSync, digest: review.digest, changes });
       if (!result.ok && result.needsGrabConnection) setReconnectRequired(true);
       notify(result.message, result.ok ? "success" : "error");
       if (result.ok) {
@@ -70,6 +73,11 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
     } finally {
       setPublishing(false);
     }
+  }
+
+  function applyReviewChanges(changes: PlatformDishChange[]) {
+    setReview(current => current ? { ...current, dishes: applyPlatformDishChanges(current.dishes, changes) } : current);
+    notify("Đã cập nhật bản duyệt. Bấm Công bố để lưu lên trang khách.", "success");
   }
 
   return <section className="admin-sheet">
@@ -92,7 +100,7 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
             <Button type="button" disabled={busy || Boolean(review)} onClick={() => load(platform)}>
               <RefreshCw size={15} />{loading === platform ? "Đang lấy món…" : `Đồng bộ ${label}`}
             </Button>
-            {snapshot && <Button type="button" variant="outline" disabled={busy || Boolean(review)} onClick={() => setEditing(platform)}>
+            {snapshot && <Button type="button" variant="outline" disabled={busy || Boolean(review)} onClick={() => setEditing({ platform, mode: "published" })}>
               <Pencil size={15} />Sửa món
             </Button>}
           </div>
@@ -100,7 +108,12 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
       })}
     </div>
     {review && <form className="mt-5 border-t border-border pt-4" onSubmit={event => { event.preventDefault(); void publish(); }}>
-      <h4 className="font-bold">Duyệt thực đơn {platformMenus[review.platform].label}</h4>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="font-bold">Duyệt thực đơn {platformMenus[review.platform].label}</h4>
+        <Button type="button" variant="outline" disabled={publishing} onClick={() => setEditing({ platform: review.platform, mode: "review" })}>
+          <Pencil size={15} />Sửa giá
+        </Button>
+      </div>
       <p className="mt-1 text-sm text-muted-foreground">
         {previewDishes.length} món
         {review.platform === "grab" && ` · ${previewDishes.length - supplementedCount} món từ GrabFood · ${supplementedCount} món bổ sung từ beFood`}
@@ -137,6 +150,23 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
         <Button type="button" variant="outline" disabled={publishing} onClick={() => setReview(null)}>Bỏ bản duyệt</Button>
       </div>
     </form>}
-    {editing && editingSnapshot && <PlatformMenuEditor platform={editing} snapshot={editingSnapshot} notify={notify} onClose={() => setEditing(null)} />}
+    {editing?.mode === "published" && editingSnapshot && <PlatformMenuEditor
+      platform={editing.platform}
+      dishes={editingSnapshot.dishes}
+      onClose={() => setEditing(null)}
+      onCommit={async changes => {
+        const result = await updatePlatformMenu({ platform: editing.platform, previousSync: editingSnapshot.syncedAt, changes });
+        if (result.ok) {
+          notify(result.message, "success");
+          router.refresh();
+        }
+        return result;
+      }} />}
+    {editing?.mode === "review" && review && <PlatformMenuEditor
+      platform={review.platform}
+      dishes={review.dishes}
+      hint="Chỉnh tên, giá bán, giá gốc và trạng thái món trong bản duyệt. Bấm Lưu thay đổi để cập nhật danh sách, sau đó bấm Công bố để lưu lên trang khách."
+      onClose={() => setEditing(null)}
+      onCommit={changes => { applyReviewChanges(changes); return { ok: true }; }} />}
   </section>;
 }
