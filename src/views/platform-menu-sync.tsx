@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -154,8 +154,14 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
       platform={editing.platform}
       dishes={editingSnapshot.dishes}
       onClose={() => setEditing(null)}
-      onCommit={async changes => {
-        const result = await updatePlatformMenu({ platform: editing.platform, previousSync: editingSnapshot.syncedAt, changes });
+      onCommit={async ({ changes, removedIds, orderedIds }) => {
+        const result = await updatePlatformMenu({
+          platform: editing.platform,
+          previousSync: editingSnapshot.syncedAt,
+          changes,
+          removedIds,
+          orderedIds,
+        });
         if (result.ok) {
           notify(result.message, "success");
           router.refresh();
@@ -165,8 +171,18 @@ export function PlatformMenuSync({ notify, menus, ...snapshots }: PlatformSnapsh
     {editing?.mode === "review" && review && <PlatformMenuEditor
       platform={review.platform}
       dishes={review.dishes}
-      hint="Chỉnh tên, giá bán, giá gốc và trạng thái món trong bản duyệt. Bấm Lưu thay đổi để cập nhật danh sách, sau đó bấm Công bố để lưu lên trang khách."
+      hint="Chỉnh sửa, thêm, xóa món và sắp xếp thứ tự trong bản duyệt. Bấm Lưu để cập nhật danh sách, sau đó bấm Công bố để cập nhật trang khách."
       onClose={() => setEditing(null)}
-      onCommit={changes => { applyReviewChanges(changes); return { ok: true }; }} />}
+      onCommit={({ changes, removedIds, orderedIds }) => {
+        setReview(current => {
+          if (!current) return current;
+          return {
+            ...current,
+            dishes: applyPlatformDishChanges(current.dishes, changes, removedIds, orderedIds),
+          };
+        });
+        notify("Đã cập nhật bản duyệt. Bấm Công bố để lưu lên trang khách.", "success");
+        return { ok: true };
+      }} />}
   </section>;
 }

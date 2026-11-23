@@ -9,10 +9,12 @@ import { groupMenu, moveMenuCategory, moveMenuDish } from "@/lib/menu-order";
 
 type DragItem = { kind: "category"; id: string } | { kind: "dish"; id: string; category: string };
 
-export function ShopMenuOrder({ dishes, disabled, onChange }: {
-  dishes: MenuDish[];
+type OrderableDish = { id: string; name: string; category: string; price: number | null; available?: boolean; image?: string };
+
+export function ShopMenuOrder<T extends OrderableDish>({ dishes, disabled, onChange }: {
+  dishes: T[];
   disabled: boolean;
-  onChange: (dishes: MenuDish[]) => void;
+  onChange: (dishes: T[]) => void;
 }) {
   const groups = groupMenu(dishes);
   const [drag, setDrag] = useState<DragItem | null>(null);
@@ -139,7 +141,10 @@ export function ShopMenuOrder({ dishes, disabled, onChange }: {
               {dish.image && <img src={dish.image} alt="" draggable={false} loading="lazy" className="hidden size-11 shrink-0 rounded-lg object-cover sm:block" />}
               <div className="min-w-0 flex-1">
                 <p className="break-words text-sm font-bold leading-snug">{dish.name}</p>
-                <p className="mt-1 text-xs font-semibold text-primary">{formatPrice(dish.price)}{!dish.available && <span className="ml-2 font-normal text-muted-foreground">Tạm hết</span>}</p>
+                <p className="mt-1 text-xs font-semibold text-primary">
+                  {dish.price !== null ? formatPrice(dish.price) : "Chưa có giá"}
+                  {!dish.available && <span className="ml-2 font-normal text-muted-foreground">Tạm hết</span>}
+                </p>
               </div>
               <MoveButtons label={dish.name} disabled={disabled} first={position === 0} last={position === group.dishes.length - 1}
                 onUp={() => reorder(entry, group.dishes[position - 1].id)} onDown={() => reorder(entry, group.dishes[position + 1].id)} />

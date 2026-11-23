@@ -238,6 +238,7 @@ export function MenuPage({
       </section>
 
       <div key={channel} className="menu-content mx-auto max-w-6xl px-4 sm:px-8">
+        <VoucherList vouchers={activeVouchers} channel={channel} channelName={channelNames[channel]} className={channelStyles[channel]} />
         <div key={category} className="menu-board">
         {grouped.length ? grouped.map((group) => <section id={`category-${group.name}`} key={group.name} className="menu-category scroll-mt-36 mb-6">
           <SeasonGutterStickers theme={theme} index={categories.indexOf(group.name) - 1} seed={now} />
@@ -251,8 +252,6 @@ export function MenuPage({
             {group.dishes.map(dish => <DishRow key={dish.id} dish={dish} channel={channel} onPriceClick={(event) => trackLink(event, dish.supplementedFrom === "be" ? "be" : "grab_price")} />)}
           </div>
         </section>) : <div className="mb-8 rounded-3xl border border-dashed border-primary/25 bg-card py-12 text-center text-sm text-muted-foreground">{menu.length ? "Chưa tìm thấy món phù hợp." : "Menu quán đang được cập nhật."}{!menu.length && <div className="mt-3 flex justify-center gap-3"><Button variant="outline" onClick={() => selectChannel("grab")}>Xem menu GrabFood</Button><Button variant="outline" onClick={() => selectChannel("be")}>Xem menu beFood</Button></div>}</div>}
-
-        <VoucherList vouchers={activeVouchers} channel={channel} channelName={channelNames[channel]} className={channelStyles[channel]} />
         </div>
       </div>
       {channel !== "shop" && <OrderEstimator key={`estimator-${channel}`} open={estimatorOpen} onOpenChange={setEstimatorOpen}

@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -108,9 +108,15 @@ const dishPrice = z.number().int().min(0).max(100000000);
 const platformDishChangeSchema = z.object({
   id: z.string().min(1).max(120),
   name: z.string().trim().min(1).max(120),
+  category: z.string().trim().min(1).max(80).optional(),
+  description: z.string().max(500).optional(),
+  ingredients: z.string().max(500).optional(),
   price: dishPrice.nullable(),
   originalPrice: dishPrice.nullable(),
   available: z.boolean(),
+  image: imageUrl.optional(),
+  tag: z.string().trim().max(40).optional(),
+  tags: z.array(z.string().trim().min(1).max(40)).max(5).optional(),
 });
 
 export async function confirmPlatformMenu(value: unknown) {
@@ -121,9 +127,11 @@ export async function confirmPlatformMenu(value: unknown) {
     previousSync: z.union([z.literal(""), z.iso.datetime()]),
     digest: z.string().regex(/^[a-f0-9]{64}$/),
     changes: z.array(platformDishChangeSchema).max(2000).optional(),
+    removedIds: z.array(z.string().min(1).max(120)).max(2000).optional(),
+    orderedIds: z.array(z.string().min(1).max(120)).max(2000).optional(),
   }).safeParse(value);
   if (!parsed.success) return { ok: false, message: "Bản duyệt không hợp lệ. Hãy đồng bộ lại." };
-  const { platform, digest, previousSync } = parsed.data;
+  const { platform, digest, previousSync, removedIds, orderedIds } = parsed.data;
   const store = await readStore();
   let dishes: PlatformDraftDish[];
   try {
@@ -137,7 +145,9 @@ export async function confirmPlatformMenu(value: unknown) {
   if (menuDigest(dishes) !== digest) {
     return { ok: false, message: "Thực đơn trên nền tảng đã thay đổi. Hãy bỏ bản duyệt và đồng bộ lại." };
   }
-  if (parsed.data.changes?.length) dishes = applyPlatformDishChanges(dishes, parsed.data.changes);
+  if (parsed.data.changes?.length || removedIds?.length || orderedIds?.length) {
+    dishes = applyPlatformDishChanges(dishes, parsed.data.changes ?? [], removedIds, orderedIds);
+  }
   if (!await publishPlatformMenu(platform, dishes, previousSync)) {
     return { ok: false, message: "Menu đã được cập nhật ở phiên khác. Hãy tải lại để duyệt bản mới." };
   }
@@ -149,19 +159,23 @@ export async function updatePlatformMenu(value: unknown) {
   if (!process.env.DATABASE_URL) return { ok: false, message: "Cần cấu hình DATABASE_URL để lưu menu." };
   const parsed = z.object({
     platform: syncTargetSchema,
-    previousSync: z.string().min(1).max(40),
-    changes: z.array(platformDishChangeSchema).min(1).max(500),
+    previousSync: z.string().max(40).optional().default(""),
+    changes: z.array(platformDishChangeSchema).max(2000).optional(),
+    removedIds: z.array(z.string().min(1).max(120)).max(2000).optional(),
+    orderedIds: z.array(z.string().min(1).max(120)).max(2000).optional(),
   }).safeParse(value);
   if (!parsed.success) return { ok: false, message: "Thông tin món không hợp lệ. Kiểm tra tên và giá." };
 
-  const { platform, previousSync, changes } = parsed.data;
+  const { platform, previousSync, changes, removedIds, orderedIds } = parsed.data;
   const store = await readStore();
   const snapshot = store[platformMenus[platform].key];
-  if (!snapshot) return { ok: false, message: "Chưa có bản đồng bộ để chỉnh sửa. Hãy đồng bộ nền tảng này trước." };
-  if (snapshot.syncedAt !== previousSync) return { ok: false, message: "Menu đã thay đổi ở phiên khác. Hãy tải lại trang rồi sửa lại." };
+  if (previousSync && snapshot && snapshot.syncedAt !== previousSync) {
+    return { ok: false, message: "Menu đã thay đổi ở phiên khác. Hãy tải lại trang rồi sửa lại." };
+  }
 
-  const dishes = applyPlatformDishChanges(snapshot.dishes, changes);
-  if (!await savePlatformMenuDishes(platform, dishes, previousSync)) {
+  const baselineDishes = snapshot?.dishes ?? (await fetchPlatformMenu(platform, store.beMenu?.dishes).catch(() => []));
+  const dishes = applyPlatformDishChanges(baselineDishes, changes ?? [], removedIds, orderedIds);
+  if (!await savePlatformMenuDishes(platform, dishes, snapshot?.syncedAt ?? "")) {
     return { ok: false, message: "Menu đã thay đổi ở phiên khác. Hãy tải lại trang rồi sửa lại." };
   }
   revalidatePath("/");

@@ -65,9 +65,25 @@ export async function publishPlatformMenu(platform: Platform, dishes: PlatformDr
   return rows.length === 1;
 }
 
-export async function savePlatformMenuDishes(platform: Platform, dishes: PlatformDraftDish[], previousSync: string) {
+export async function savePlatformMenuDishes(platform: Platform, dishes: PlatformDraftDish[], previousSync?: string) {
   const sql = database();
   const { key } = platformMenus[platform];
+  const now = new Date().toISOString();
+  if (!previousSync) {
+    const snapshot = { dishes, syncedAt: now };
+    const initial = JSON.stringify({ ...defaults, [key]: snapshot });
+    const rows = await sql`INSERT INTO menu_state (id, data)
+      SELECT 1, ${initial}::jsonb
+      WHERE EXISTS (SELECT 1 FROM menu_state WHERE id = 1) OR true
+      ON CONFLICT (id) DO UPDATE SET data = jsonb_set(
+        menu_state.data,
+        ARRAY[${key}]::text[],
+        jsonb_build_object('dishes', ${JSON.stringify(dishes)}::jsonb, 'syncedAt', COALESCE(menu_state.data -> ${key}::text ->> 'syncedAt', ${now}))::jsonb,
+        true
+      )
+      RETURNING id`;
+    return rows.length === 1;
+  }
   const rows = await sql`UPDATE menu_state
     SET data = jsonb_set(
       data,

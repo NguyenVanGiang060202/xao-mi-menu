@@ -1,36 +1,31 @@
-"use client";
+﻿"use client";
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowDownUp, ArrowLeft, ChartNoAxesColumnIncreasing, Check, ImagePlus, LogOut, Menu, Monitor, Palette, Pencil, Plus, RefreshCw, Save, Smartphone, TicketPercent, Trash2, Utensils } from "lucide-react";
+import { ArrowLeft, ChartNoAxesColumnIncreasing, Check, ImagePlus, LogOut, Menu, Monitor, Palette, Save, Smartphone, TicketPercent, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminToast, type AdminNotice, type NotifyAdmin } from "@/components/admin-toast";
-import { DishTag } from "@/components/dish-tag";
 import { SeasonSticker } from "@/components/season-sticker";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { dishTagPresets, formatPrice, getDishTags, parseVietnamDateTime, themeNames, themes, type ThemeName } from "@/lib/menu-data";
-import { groupMenu } from "@/lib/menu-order";
+import { formatPrice, parseVietnamDateTime, themeNames, themes, type ThemeName } from "@/lib/menu-data";
 import { defaultShopSchedule, shopDays, shopLocation, type Appearance, type MenuDish as Dish } from "@/lib/catalog";
 import type { Store } from "@/lib/store";
 import type { PublicMenu } from "@/lib/public-menu";
-import { cancelSchedule, logout, syncBeToShop, updateSeasonSchedule, updateShop, updateShopMenu, updateTheme, uploadImage as uploadAsset } from "@/app/actions";
+import { cancelSchedule, logout, updateSeasonSchedule, updateShop, updateTheme, uploadImage as uploadAsset } from "@/app/actions";
+import { MenuUnifiedManager } from "./menu-unified-manager";
 import { PlatformMenuSync } from "./platform-menu-sync";
 import { PlatformFees } from "./platform-fees";
 import { AppearancePreview } from "./appearance-preview";
 import { AdminTracking } from "./admin-tracking";
-import { ShopMenuOrder } from "./shop-menu-order";
 import { VoucherAdmin } from "./voucher-admin";
 
 const sections = [
   { id: "appearance", label: "Giao diện", icon: Palette },
-  { id: "menu", label: "Menu quán", icon: Menu },
+  { id: "menu", label: "Thực đơn", icon: Menu },
   { id: "vouchers", label: "Voucher", icon: TicketPercent },
   { id: "tracking", label: "Thống kê", icon: ChartNoAxesColumnIncreasing },
 ] as const;
 
-type MenuDraft = { revision: string; original: Dish[]; dishes: Dish[] };
 const seasonTime = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" });
 const dateTimeInput = (time: number) => new Date(time + 7 * 60 * 60 * 1000).toISOString().slice(0, 16);
 
@@ -49,24 +44,10 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
   const dismissNotice = useCallback(() => setNotice(null), []);
   const notify: NotifyAdmin = (message, kind) => setNotice({ message, kind });
   const [busy, setBusy] = useState(false);
-  const [syncingShop, setSyncingShop] = useState(false);
-  const [savingMenu, setSavingMenu] = useState(false);
-  const [menuDraft, setMenuDraft] = useState<MenuDraft | null>(null);
   const [voucherDraft, setVoucherDraft] = useState(store.vouchers);
-  const [reordering, setReordering] = useState(false);
   const [editingSeason, setEditingSeason] = useState<{ start: number; end: number; originalAppearance: Appearance } | null>(null);
   const [activeSection, setActiveSection] = useState<(typeof sections)[number]["id"]>("appearance");
-  const [editingDish, setEditingDish] = useState<Dish | null>(null);
-  const [dishDraft, setDishDraft] = useState<Dish | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [dishPriceInput, setDishPriceInput] = useState("");
-  const priceText = dishPriceInput.trim().replace(",", ".");
-  const parsedPrice = /^\d+(?:\.\d{0,3})?$/.test(priceText) ? Math.round(Number(priceText) * 1000) : NaN;
-  const dishPrice = Number.isSafeInteger(parsedPrice) && parsedPrice <= 100000000 ? parsedPrice : null;
-  const menuDishes = menuDraft?.dishes ?? store.dishes;
-  const dishGroups = groupMenu(menuDishes);
   const appearance = { theme, greeting, accent, background, image: headerImage, logo };
-  const menuBusy = busy || syncingShop || savingMenu;
 
   async function run(action: () => Promise<void | string>, message: string) {
     if (busy) return;
@@ -84,74 +65,6 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
     } finally {
       setBusy(false);
     }
-  }
-
-  async function syncShopMenu() {
-    if (menuBusy || menuDraft) return;
-    setSyncingShop(true);
-    try {
-      const result = await syncBeToShop();
-      notify(result.message, result.ok ? "success" : "error");
-    } catch {
-      notify("Không đồng bộ được Menu quán từ beFood. Hãy thử lại.", "error");
-    } finally {
-      setSyncingShop(false);
-    }
-  }
-
-  function stageDish(id: string, dish?: Dish) {
-    setMenuDraft(current => {
-      const draft = current ?? { revision: menuRevision, original: store.dishes, dishes: store.dishes };
-      const original = draft.original.find(item => item.id === id);
-      const next = JSON.stringify(dish) === JSON.stringify(original) ? original : dish;
-      const exists = draft.dishes.some(item => item.id === id);
-      const dishes = !next ? draft.dishes.filter(item => item.id !== id)
-        : exists ? draft.dishes.map(item => item.id === id ? next : item)
-        : [...draft.dishes, next];
-      return dishes.length === draft.original.length && dishes.every((item, index) => item === draft.original[index])
-        ? null : { ...draft, dishes };
-    });
-  }
-
-  function stageOrder(dishes: Dish[]) {
-    setMenuDraft(current => {
-      const draft = current ?? { revision: menuRevision, original: store.dishes, dishes: store.dishes };
-      return dishes.length === draft.original.length && dishes.every((dish, index) => dish === draft.original[index])
-        ? null : { ...draft, dishes };
-    });
-  }
-
-  async function saveMenu() {
-    if (menuBusy || !menuDraft) return;
-    setSavingMenu(true);
-    try {
-      const originals = new Set(menuDraft.original);
-      const ids = new Set(menuDraft.dishes.map(dish => dish.id));
-      const result = await updateShopMenu({
-        revision: menuDraft.revision,
-        changed: menuDraft.dishes.filter(dish => !originals.has(dish)),
-        removedIds: menuDraft.original.filter(dish => !ids.has(dish.id)).map(dish => dish.id),
-        orderedIds: menuDraft.dishes.map(dish => dish.id),
-      });
-      notify(result.message, result.ok ? "success" : "error");
-      if (result.ok) { setMenuDraft(null); router.refresh(); }
-    } catch {
-      notify("Không lưu được Menu quán. Hãy thử lại.", "error");
-    } finally {
-      setSavingMenu(false);
-    }
-  }
-
-  function openDish(dish: Dish) {
-    setConfirmDelete(false);
-    setEditingDish(dish);
-    setDishDraft({ ...dish });
-    setDishPriceInput(dish.name ? String(dish.price / 1000).replace(".", ",") : "");
-  }
-
-  function closeDish() {
-    setEditingDish(null);
-    setDishDraft(null);
   }
 
   function editAppearance(value: Appearance) {
@@ -206,7 +119,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
   const toast = <AdminToast notice={notice} onDismiss={dismissNotice} />;
 
   return <main className="admin-workspace min-h-screen">
-    {!previewOpen && !editingDish && toast}
+    {!previewOpen && toast}
     <header className="admin-header">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-8">
         <div className="flex items-center gap-3">
@@ -227,61 +140,28 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
       </nav>
 
       <div className="admin-content min-w-0">
-        {activeSection === "tracking" ? <AdminTracking /> : activeSection === "menu" ? <>
-          <PlatformMenuSync beMenu={store.beMenu} grabMenu={store.grabMenu} xanhMenu={store.xanhMenu} menus={publicMenu.menus} notify={notify} />
-          <PlatformFees fees={store.platformFees} notify={notify} />
-          <section className="admin-sheet">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <div><h2 className="text-3xl">Menu quán</h2><p className="text-sm text-muted-foreground">{menuDishes.length} món · {menuDishes.filter(dish => dish.available).length} đang bán</p></div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant={reordering ? "secondary" : "outline"} disabled={menuBusy || !menuDishes.length} aria-pressed={reordering}
-                  onClick={() => setReordering(value => !value)}><ArrowDownUp size={15} aria-hidden="true" />{reordering ? "Xong sắp xếp" : "Sắp xếp"}</Button>
-                <Button variant="outline" disabled={menuBusy || Boolean(menuDraft)} onClick={syncShopMenu}>
-                  <RefreshCw size={15} aria-hidden="true" />{syncingShop ? "Đang đồng bộ…" : "Đồng bộ từ beFood"}
-                </Button>
-                <Button variant="outline" disabled={menuBusy} onClick={() => {
-                  const dish = { id: crypto.randomUUID(), name: "", category: "Mì xào", price: 0, description: "", ingredients: "", available: true };
-                  openDish(dish);
-                }}><Plus size={16} />Thêm món</Button>
-              </div>
-            </div>
-            <div className="sticky top-2 z-10 mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:px-4">
-              <p role="status" className="text-sm">
-                <span className="font-bold">{menuDraft ? "Có thay đổi chưa lưu" : "Menu quán đã lưu"}</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">{menuDraft ? "Lưu thứ tự và các chỉnh sửa để cập nhật trang khách." : "Thêm, sửa, xóa hoặc sắp xếp món rồi lưu để cập nhật trang khách."}</span>
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                {menuDraft && <Button variant="outline" disabled={menuBusy} onClick={() => { setMenuDraft(null); router.refresh(); }}>Bỏ thay đổi</Button>}
-                <Button disabled={menuBusy || !menuDraft} onClick={saveMenu}><Save size={15} />{savingMenu ? "Đang lưu…" : "Lưu Menu quán"}</Button>
-              </div>
-            </div>
-            {reordering ? <ShopMenuOrder dishes={menuDishes} disabled={menuBusy} onChange={stageOrder} /> : <div className="space-y-6">
-              {!menuDishes.length && <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">Menu quán chưa có món.</p>}
-              {dishGroups.map(({ category, dishes }) => <section key={category}>
-                <h3 className="mb-2 flex items-center gap-2">{category}<span className="rounded-full bg-secondary px-2 py-0.5 font-sans text-xs font-semibold">{dishes.length}</span></h3>
-                <ul className="grid gap-2 xl:grid-cols-2">
-                  {dishes.map(dish => <li key={dish.id} className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-card p-2 sm:gap-3">
-                    <button type="button" disabled={menuBusy} className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left sm:gap-3" onClick={() => openDish(dish)}>
-                      {dish.image ? <img src={dish.image} alt="" loading="lazy" className="size-12 shrink-0 rounded-lg object-cover sm:size-14" /> : <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-secondary text-primary sm:size-14"><Utensils size={18} /></span>}
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-bold leading-snug">{dish.name}</span>
-                        <span className="mt-0.5 block text-xs font-semibold text-primary">{formatPrice(dish.price)}</span>
-                        <span className="flex flex-wrap gap-1.5 empty:hidden [&:not(:empty)]:mt-1.5">
-                          {getDishTags(dish).map(tag => <DishTag key={tag} label={tag} />)}
-                        </span>
-                      </span>
-                      <Pencil size={14} className="shrink-0 text-primary" aria-hidden="true" />
-                    </button>
-                    <div className="flex shrink-0 flex-col items-center gap-1 border-l border-border pl-2 text-[10px] text-muted-foreground sm:pl-3">
-                      <Switch checked={dish.available} disabled={menuBusy} aria-label={`Đang bán: ${dish.name}`} onCheckedChange={available => stageDish(dish.id, { ...dish, available })} />
-                      {dish.available ? "Đang bán" : "Tạm hết"}
-                    </div>
-                  </li>)}
-                </ul>
-              </section>)}
-            </div>}
-          </section>
-        </> : activeSection === "vouchers" ? <VoucherAdmin vouchers={store.vouchers} draft={voucherDraft} onDraftChange={setVoucherDraft} notify={notify} /> : <>
+        {activeSection === "tracking" ? (
+          <AdminTracking />
+        ) : activeSection === "menu" ? (
+          <>
+            <MenuUnifiedManager
+              store={store}
+              menuRevision={menuRevision}
+              publicMenu={publicMenu}
+              notify={notify}
+            />
+            <PlatformMenuSync
+              beMenu={store.beMenu}
+              grabMenu={store.grabMenu}
+              xanhMenu={store.xanhMenu}
+              menus={publicMenu.menus}
+              notify={notify}
+            />
+            <PlatformFees fees={store.platformFees} notify={notify} />
+          </>
+        ) : activeSection === "vouchers" ? (
+          <VoucherAdmin vouchers={store.vouchers} draft={voucherDraft} onDraftChange={setVoucherDraft} notify={notify} />
+        ) : <>
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Cửa hàng của bạn</p><h2 className="mt-1 text-2xl font-bold sm:text-3xl">Giao diện thực đơn</h2><p className="mt-1 text-sm text-muted-foreground">Xào Mì!</p></div><span className="flex items-center gap-1.5 text-xs font-semibold text-accent-foreground"><span className="size-2 rounded-full bg-emerald-600" />Đang hiển thị</span></div>
 
         <section className="admin-sheet">
@@ -406,68 +286,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
         </>}
       </div>
     </div>
-    <Sheet open={Boolean(editingDish)} onOpenChange={open => { if (!open) closeDish(); }}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
-        {editingDish && toast}
-        {dishDraft && <><SheetHeader className="text-left"><SheetTitle>{editingDish?.name || "Thêm món"}</SheetTitle><SheetDescription>Chỉnh thông tin món, sau đó bấm Lưu Menu quán để cập nhật trang khách.</SheetDescription></SheetHeader>
-          {dishDraft.image && <img src={dishDraft.image} alt={dishDraft.name || "Ảnh món"} className="mt-4 h-40 w-full rounded-xl object-cover" />}
-          <div className="mt-6 space-y-4"><label className="block text-xs font-semibold">Tên món<Input value={dishDraft.name} onChange={(event) => setDishDraft({ ...dishDraft, name: event.target.value })} className="mt-2" /></label><label className="block text-xs font-semibold">Danh mục<select value={dishDraft.category} onChange={(event) => setDishDraft({ ...dishDraft, category: event.target.value })} className="mt-2 h-10 w-full border border-input bg-card px-3 text-sm">{["Combo", "Mì xào", "Mì trộn", "Ăn kèm", "Đồ uống"].map((name) => <option key={name}>{name}</option>)}</select></label><div>
-            <label htmlFor="dish-price" className="block text-xs font-semibold">Giá tại quán</label>
-            <div className="relative mt-2">
-              <Input id="dish-price" type="text" inputMode="decimal" value={dishPriceInput} onChange={event => setDishPriceInput(event.target.value)}
-                placeholder="Ví dụ 65" className="pr-20 tabular-nums" aria-describedby="dish-price-hint" aria-invalid={Boolean(priceText) && dishPrice === null} />
-              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-muted-foreground">nghìn đồng</span>
-            </div>
-            <p id="dish-price-hint" className="mt-1.5 text-xs text-muted-foreground">
-              {dishPrice !== null ? `Giá hiển thị ${formatPrice(dishPrice)}` : priceText ? "Nhập giá hợp lệ bằng nghìn đồng." : "Ví dụ nhập 65 để lưu 65.000 ₫."}
-            </p>
-          </div><label className="flex cursor-pointer items-center gap-2 border border-border px-3 py-2.5 text-xs font-semibold hover:bg-secondary"><ImagePlus size={16} className="text-primary" />Ảnh món<input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={event => uploadImage(event.currentTarget.files?.[0], image => setDishDraft(current => current?.id === dishDraft.id ? { ...current, image } : current))} /></label></div>
-          <DishTagsEditor key={dishDraft.id} tags={getDishTags(dishDraft)} onChange={tags => setDishDraft({ ...dishDraft, tag: undefined, tags })} />
-          <div className="mt-6 flex flex-wrap justify-between gap-2 border-t border-border pt-4">
-            {editingDish?.name && <Button variant="outline" className="text-destructive" disabled={busy || confirmDelete} onClick={() => setConfirmDelete(true)}><Trash2 size={15} />Xóa món</Button>}
-            <Button className="ml-auto" disabled={busy || confirmDelete || !dishDraft.name.trim() || dishPrice === null} onClick={() => {
-              if (dishPrice === null) return;
-              stageDish(dishDraft.id, { ...dishDraft, name: dishDraft.name.trim(), price: dishPrice });
-              closeDish();
-            }}><Check size={15} />Lưu món vào bản chỉnh sửa</Button>
-          </div>
-          {confirmDelete && <div className="mt-3 rounded-xl border border-destructive/25 bg-destructive/5 p-3">
-            <p className="text-sm font-bold">Xóa {editingDish?.name}?</p>
-            <p className="mt-1 text-xs text-muted-foreground">Món sẽ được gỡ khỏi trang khách khi bạn bấm Lưu Menu quán.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => setConfirmDelete(false)}>Giữ món</Button>
-              <Button onClick={() => { stageDish(dishDraft.id); closeDish(); }}>Xác nhận xóa</Button>
-            </div>
-          </div>}
-        </>}
-      </SheetContent>
-    </Sheet>
   </main>;
-}
-
-function DishTagsEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
-  const [custom, setCustom] = useState("");
-  const customTag = getDishTags({ tag: custom })[0];
-  const canAdd = Boolean(customTag && !tags.includes(customTag) && tags.length < 5);
-
-  return <fieldset className="mt-5 rounded-xl border border-border p-3">
-    <legend className="px-1 text-sm font-bold">Nhãn món</legend>
-    <p className="mb-3 text-xs text-muted-foreground">Chọn tối đa 5 nhãn. Món tương ứng trên các tab đặt món sẽ hiển thị cùng nhãn.</p>
-    <div className="flex flex-wrap gap-2">
-      {[...new Set([...dishTagPresets, ...tags])].map(tag => {
-        const selected = tags.includes(tag);
-        return <Button key={tag} type="button" variant={selected ? undefined : "outline"} aria-pressed={selected}
-          disabled={!selected && tags.length >= 5} className="h-9 rounded-full px-3"
-          onClick={() => onChange(selected ? tags.filter(value => value !== tag) : [...tags, tag])}>
-          {selected && <Check size={14} aria-hidden="true" />}{tag}
-        </Button>;
-      })}
-    </div>
-    <div className="mt-3 flex items-center gap-2">
-      <Input aria-label="Nhãn tùy chỉnh" placeholder="Nhãn tùy chỉnh" maxLength={40} value={custom} onChange={event => setCustom(event.target.value)} />
-      <Button type="button" variant="outline" disabled={!canAdd} onClick={() => { onChange([...tags, customTag]); setCustom(""); }}>Thêm nhãn</Button>
-    </div>
-  </fieldset>;
 }
 
 function PreviewPanel({ mode, appearance, dishes }: { mode: "phone" | "desktop"; appearance: Appearance; dishes: Dish[] }) {
