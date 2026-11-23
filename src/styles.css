@@ -1165,3 +1165,236 @@
   .menu-awning { pointer-events: auto; }
   .menu-awning-valance[data-rippling="true"] { mask: none; }
 }
+
+/* ---- Voucher tickets ---- */
+.menu-tickets { margin-block: 0.25rem 0.5rem; }
+
+.menu-tickets-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.menu-tickets-head h3 {
+  font-family: "Baloo 2 Variable", system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.menu-tickets-icon {
+  display: grid;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--channel-color);
+  color: var(--channel-text);
+}
+.menu-tickets-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+.menu-tickets-hint {
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.menu-tickets-nav {
+  display: flex;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+.menu-tickets-nav button {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  background: var(--card, #fffaf0);
+  color: inherit;
+  cursor: pointer;
+}
+.menu-tickets-nav button:not(:disabled):hover { background: var(--channel-tint); }
+.menu-tickets-nav button:disabled { opacity: 0.35; cursor: default; }
+.menu-tickets-nav button:focus-visible,
+.menu-tickets-list:focus-visible { outline: 2px solid; outline-offset: 2px; }
+@media (pointer: coarse) {
+  .menu-tickets-nav { display: none; }
+}
+
+.menu-tickets-list {
+  --fade-start: 0rem;
+  --fade-end: 0rem;
+  display: flex;
+  gap: 0.625rem;
+  margin-inline: -1rem;
+  padding: 0.1rem 1rem 0.25rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1rem;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-start), #000 calc(100% - var(--fade-end)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--fade-start), #000 calc(100% - var(--fade-end)), transparent);
+  list-style: none;
+}
+.menu-tickets-list::-webkit-scrollbar { display: none; }
+.menu-tickets-list[data-at-start="false"] { --fade-start: 1.5rem; }
+.menu-tickets-list[data-at-end="false"] { --fade-end: 1.5rem; }
+@media (pointer: fine) {
+  .menu-tickets-list { cursor: grab; }
+}
+.menu-tickets-list[data-dragging="true"] {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+@media (min-width: 40rem) {
+  .menu-tickets-list { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; }
+}
+
+.menu-ticket {
+  --stub: 4.1rem;
+  display: grid;
+  flex: 0 0 min(17.5rem, 80%);
+  grid-template-columns: var(--stub) minmax(0, 1fr);
+  min-height: 4.75rem;
+  overflow: hidden;
+  border: 1.5px solid var(--channel-color);
+  border-radius: 0.875rem;
+  background: var(--card, #fffaf0);
+  scroll-snap-align: start;
+  -webkit-mask:
+    radial-gradient(circle 0.4rem at var(--stub) 0, #0000 97%, #000) 0 0 / 100% 51% no-repeat,
+    radial-gradient(circle 0.4rem at var(--stub) 100%, #0000 97%, #000) 0 100% / 100% 51% no-repeat;
+  mask:
+    radial-gradient(circle 0.4rem at var(--stub) 0, #0000 97%, #000) 0 0 / 100% 51% no-repeat,
+    radial-gradient(circle 0.4rem at var(--stub) 100%, #0000 97%, #000) 0 100% / 100% 51% no-repeat;
+}
+@supports (color: color-mix(in lab, red, red)) {
+  .menu-ticket {
+    border-color: color-mix(in srgb, var(--channel-color) 55%, var(--border));
+  }
+}
+.menu-ticket:only-child { flex-basis: min(24rem, 100%); }
+
+.menu-ticket-stub {
+  display: grid;
+  padding: 0.35rem;
+  place-items: center;
+  background: var(--channel-color);
+  color: var(--channel-text);
+  text-align: center;
+  font-family: "Baloo 2 Variable", system-ui, sans-serif;
+}
+.menu-ticket-stub strong {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.menu-ticket-stub strong[data-long="true"] { font-size: 1rem; }
+
+.menu-ticket-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+  padding: 0.5rem 0.7rem 0.5rem 0.8rem;
+  border-left: 2px dashed var(--channel-color);
+}
+@supports (color: color-mix(in lab, red, red)) {
+  .menu-ticket-body {
+    border-left-color: color-mix(in srgb, var(--channel-color) 60%, var(--border));
+  }
+}
+.menu-ticket-title {
+  overflow: hidden;
+  font-family: "Baloo 2 Variable", system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.menu-ticket-meta,
+.menu-ticket-terms {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.menu-ticket-meta {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.menu-ticket-terms {
+  color: var(--muted-foreground);
+  -webkit-line-clamp: 1;
+}
+.menu-ticket-foot {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.25rem;
+}
+.menu-ticket-code {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 2rem;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1.5px dashed var(--channel-color);
+  border-radius: 0.55rem;
+  background: var(--channel-tint);
+  color: #302508;
+  cursor: pointer;
+}
+@supports (color: color-mix(in lab, red, red)) {
+  .menu-ticket-code {
+    border-color: color-mix(in srgb, var(--channel-color) 70%, #1b1208);
+  }
+}
+.menu-ticket-code b {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  overflow: hidden;
+  padding-inline: 0.55rem;
+  font-family: "Baloo 2 Variable", system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.menu-ticket-code span {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+  padding-inline: 0.5rem;
+  background: var(--channel-color);
+  color: var(--channel-text);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+.menu-ticket-code[data-copied="true"] span { background: #1f7a4d; color: #fff; }
+.menu-ticket-code:focus-visible { outline: 2px solid; outline-offset: 2px; }
+.menu-ticket-auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+@media (pointer: coarse) {
+  .menu-ticket-code { min-height: 2.5rem; }
+}

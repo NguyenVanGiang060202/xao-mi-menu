@@ -83,6 +83,18 @@ export type Voucher = {
   enabled: boolean;
 };
 export type VoucherMap = Record<VoucherChannel, Voucher[]>;
+export type PlatformFee = {
+  delivery: number;
+  service: number;
+  smallOrderThreshold: number;
+  smallOrderFee: number;
+};
+export type PlatformFeeMap = Record<Platform, PlatformFee>;
+export const emptyPlatformFees: PlatformFeeMap = {
+  xanh: { delivery: 0, service: 0, smallOrderThreshold: 0, smallOrderFee: 0 },
+  grab: { delivery: 0, service: 0, smallOrderThreshold: 0, smallOrderFee: 0 },
+  be: { delivery: 0, service: 0, smallOrderThreshold: 0, smallOrderFee: 0 },
+};
 type Hours = { open: string; close: string };
 export type ShopInfo = { branch: string; hours: string; schedule?: { weekday: Hours; weekend: Hours } };
 export const shopLocation = {

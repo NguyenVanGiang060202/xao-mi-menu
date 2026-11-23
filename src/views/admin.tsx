@@ -17,6 +17,7 @@ import type { Store } from "@/lib/store";
 import type { PublicMenu } from "@/lib/public-menu";
 import { cancelSchedule, logout, syncBeToShop, updateSeasonSchedule, updateShop, updateShopMenu, updateTheme, uploadImage as uploadAsset } from "@/app/actions";
 import { PlatformMenuSync } from "./platform-menu-sync";
+import { PlatformFees } from "./platform-fees";
 import { AppearancePreview } from "./appearance-preview";
 import { AdminTracking } from "./admin-tracking";
 import { ShopMenuOrder } from "./shop-menu-order";
@@ -228,6 +229,7 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
       <div className="admin-content min-w-0">
         {activeSection === "tracking" ? <AdminTracking /> : activeSection === "menu" ? <>
           <PlatformMenuSync beMenu={store.beMenu} grabMenu={store.grabMenu} xanhMenu={store.xanhMenu} menus={publicMenu.menus} notify={notify} />
+          <PlatformFees fees={store.platformFees} notify={notify} />
           <section className="admin-sheet">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div><h2 className="text-3xl">Menu quán</h2><p className="text-sm text-muted-foreground">{menuDishes.length} món · {menuDishes.filter(dish => dish.available).length} đang bán</p></div>

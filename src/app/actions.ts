@@ -264,6 +264,26 @@ export async function updateVouchers(value: unknown) {
   revalidatePath("/menuquan");
 }
 
+const platformFeeSchema = z.object({
+  delivery: z.number().int().min(0).max(10_000_000),
+  service: z.number().int().min(0).max(10_000_000),
+  smallOrderThreshold: z.number().int().min(0).max(10_000_000),
+  smallOrderFee: z.number().int().min(0).max(10_000_000),
+});
+
+export async function updatePlatformFees(value: unknown) {
+  await requireAdmin();
+  const parsed = z.object({
+    xanh: platformFeeSchema,
+    grab: platformFeeSchema,
+    be: platformFeeSchema,
+  }).safeParse(value);
+  if (!parsed.success) return "Phí ước tính không hợp lệ. Kiểm tra lại các con số.";
+  await saveValue("platformFees", parsed.data);
+  revalidatePath("/");
+  revalidatePath("/admin");
+}
+
 export async function updateShopMenu(value: unknown) {
   await requireAdmin();
   if (!process.env.DATABASE_URL) return { ok: false, message: "Cần kết nối cơ sở dữ liệu để lưu Menu quán." };

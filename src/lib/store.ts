@@ -1,6 +1,6 @@
 import "server-only";
 import { neon } from "@neondatabase/serverless";
-import { defaultAppearance, dishMatchKey, platformMenus, seedMenus, voucherChannels, type Appearance, type MenuDish, type Platform, type PlatformDraftDish, type ShopInfo, type Voucher, type VoucherChannel, type VoucherDiscount, type VoucherMap } from "./catalog";
+import { defaultAppearance, dishMatchKey, emptyPlatformFees, platformMenus, seedMenus, voucherChannels, type Appearance, type MenuDish, type Platform, type PlatformDraftDish, type PlatformFee, type PlatformFeeMap, type ShopInfo, type Voucher, type VoucherChannel, type VoucherDiscount, type VoucherMap } from "./catalog";
 import { isHolidayTheme } from "./menu-data";
 import { applyMenuOrder } from "./menu-order";
 
@@ -14,9 +14,10 @@ export type Store = PlatformSnapshots & {
   draft: Appearance | null;
   seasonSchedules: SeasonSchedule[];
   vouchers: VoucherMap;
+  platformFees: PlatformFeeMap;
 };
 const emptyVouchers = (): VoucherMap => ({ shop: [], xanh: [], grab: [], be: [] });
-const defaults: Store = { dishes: seedMenus.shop, shop: { branch: "", hours: "" }, appearance: defaultAppearance, draft: null, seasonSchedules: [], vouchers: emptyVouchers() };
+const defaults: Store = { dishes: seedMenus.shop, shop: { branch: "", hours: "" }, appearance: defaultAppearance, draft: null, seasonSchedules: [], vouchers: emptyVouchers(), platformFees: emptyPlatformFees };
 const shopPhotos = new Map(seedMenus.shop.map(dish => [dish.id, dish.image]));
 function database() {
   if (!process.env.DATABASE_URL) throw new Error("Chưa cấu hình DATABASE_URL.");
@@ -39,7 +40,8 @@ export async function readStoreWithMenuRevision(): Promise<{ store: Store; menuR
   const seasonSchedules: SeasonSchedule[] = [...seasons, ...(row?.data?.holidaySchedules ?? [])];
   seasonSchedules.sort((a, b) => a.start - b.start);
   const vouchers = normalizeVouchers(row?.data?.vouchers ?? store.vouchers);
-  return { store: { ...store, dishes, seasonSchedules, vouchers }, menuRevision: row?.revision ?? "" };
+  const platformFees = normalizePlatformFees(row?.data?.platformFees);
+  return { store: { ...store, dishes, seasonSchedules, vouchers, platformFees }, menuRevision: row?.revision ?? "" };
 }
 
 export async function saveValue<K extends keyof Store>(key: K, value: Store[K]) {
@@ -232,5 +234,26 @@ export function normalizeVouchers(value: unknown): VoucherMap {
       .filter((voucher): voucher is Voucher => voucher !== null);
     return [channel, vouchers];
   })) as VoucherMap;
+}
+
+function normalizeFee(value: unknown): PlatformFee {
+  const fee = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const amount = (input: unknown) => {
+    const rounded = typeof input === "number" ? Math.round(input) : 0;
+    return Number.isSafeInteger(rounded) && rounded >= 0 && rounded <= 10_000_000 ? rounded : 0;
+  };
+  return {
+    delivery: amount(fee.delivery),
+    service: amount(fee.service),
+    smallOrderThreshold: amount(fee.smallOrderThreshold),
+    smallOrderFee: amount(fee.smallOrderFee),
+  };
+}
+
+export function normalizePlatformFees(value: unknown): PlatformFeeMap {
+  const source = value && typeof value === "object" ? value as Partial<Record<Platform, unknown>> : {};
+  return Object.fromEntries(
+    (Object.keys(platformMenus) as Platform[]).map(platform => [platform, normalizeFee(source[platform])]),
+  ) as PlatformFeeMap;
 }
 

@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 
-import { ArrowUpRight, Clock3, CupSoda, Flame, Layers, MapPin, MessageCircle, Soup, Utensils } from "lucide-react";
+import { ArrowUpRight, Clock3, CupSoda, Flame, Layers, MapPin, MessageCircle, ReceiptText, Soup, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DishTag } from "@/components/dish-tag";
+import { OrderEstimator } from "@/components/order-estimator";
 import { SeasonGutterStickers, SeasonSticker } from "@/components/season-sticker";
 import { StorefrontAwning } from "@/components/storefront-awning";
 import { formatPrice, getDishTags, themes, type Channel } from "@/lib/menu-data";
-import { channels, defaultShopSchedule, shopDays, shopLocation, type PlatformDraftDish as Dish, type Appearance, type ShopInfo, type VoucherMap } from "@/lib/catalog";
+import { channels, defaultShopSchedule, shopDays, shopLocation, type PlatformDraftDish as Dish, type Appearance, type PlatformFeeMap, type ShopInfo, type VoucherMap } from "@/lib/catalog";
 import { contactName, zaloNumber, zaloUrl } from "@/lib/contact";
 import { VoucherList } from "@/components/voucher-list";
 import { trackingCategories, trackingScrollLevels, type TrackingEvent } from "@/lib/tracking-data";
@@ -41,6 +42,7 @@ type MenuPageProps = {
   menus: Record<Channel, Dish[]>;
   appearance: Appearance;
   vouchers: VoucherMap;
+  platformFees: PlatformFeeMap;
   now: number;
   shop: ShopInfo;
   trackTraffic?: boolean;
@@ -52,6 +54,7 @@ export function MenuPage({
   menus,
   appearance,
   vouchers,
+  platformFees,
   now,
   shop,
   trackTraffic = false,
@@ -60,6 +63,7 @@ export function MenuPage({
 }: MenuPageProps) {
   const [channel, setChannel] = useState<Channel>(initialChannel);
   const [category, setCategory] = useState("Tất cả");
+  const [estimatorOpen, setEstimatorOpen] = useState(false);
   const [navigationStuck, setNavigationStuck] = useState(false);
   const navigationMarker = useRef<HTMLDivElement>(null);
   const viewSent = useRef(false);
@@ -213,11 +217,16 @@ export function MenuPage({
           {channelOrder.length > 0 && <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:gap-3" role="tablist" aria-label="Chọn nơi đặt món">
             {channelOrder.map((key) => <Button key={key} role="tab" aria-selected={channel === key} variant="ghost" onClick={() => selectChannel(key)} className={`menu-channel-tab ${channelStyles[key]} h-11 flex-1 rounded-xl px-2 text-xs font-bold sm:flex-none sm:px-5 sm:text-sm`}><span>{channelNames[key]}</span></Button>)}
           </div>}
-          <a href={order.url} target="_blank" rel="noreferrer"
-            onClick={trackChannelOrder} onAuxClick={trackChannelOrder}
-            className={`menu-channel-cta ${channelStyles[channel]} inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold`}>
-            <span className="menu-cta-label">{order.label}</span><ArrowUpRight size={16} aria-hidden="true" />
-          </a>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <a href={order.url} target="_blank" rel="noreferrer"
+              onClick={trackChannelOrder} onAuxClick={trackChannelOrder}
+              className={`menu-channel-cta ${channelStyles[channel]} inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold sm:flex-none`}>
+              <span className="menu-cta-label">{order.label}</span><ArrowUpRight size={16} aria-hidden="true" />
+            </a>
+            {channel !== "shop" && <Button variant="outline" className="min-h-11 rounded-xl" onClick={() => setEstimatorOpen(true)}>
+              <ReceiptText size={16} aria-hidden="true" />Tính tiền
+            </Button>}
+          </div>
         </div>
         {menu.length > 0 && <nav className="menu-filter-row mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-3 sm:px-8" aria-label="Danh mục món">
           {categories.map((item) => {
@@ -243,9 +252,11 @@ export function MenuPage({
           </div>
         </section>) : <div className="mb-8 rounded-3xl border border-dashed border-primary/25 bg-card py-12 text-center text-sm text-muted-foreground">{menu.length ? "Chưa tìm thấy món phù hợp." : "Menu quán đang được cập nhật."}{!menu.length && <div className="mt-3 flex justify-center gap-3"><Button variant="outline" onClick={() => selectChannel("grab")}>Xem menu GrabFood</Button><Button variant="outline" onClick={() => selectChannel("be")}>Xem menu beFood</Button></div>}</div>}
 
-        <VoucherList vouchers={activeVouchers} />
+        <VoucherList vouchers={activeVouchers} channel={channel} channelName={channelNames[channel]} className={channelStyles[channel]} />
         </div>
       </div>
+      {channel !== "shop" && <OrderEstimator key={`estimator-${channel}`} open={estimatorOpen} onOpenChange={setEstimatorOpen}
+        platform={channel} dishes={menus[channel]} vouchers={vouchers[channel]} fees={platformFees[channel]} />}
     </main>
   );
 }

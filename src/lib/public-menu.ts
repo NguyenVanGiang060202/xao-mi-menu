@@ -21,7 +21,7 @@ export function getPublicMenu(store: Store, now: number) {
   const grabMenu = completeGrabMenu(store.grabMenu?.dishes ?? grabSnapshot, store.beMenu?.dishes ?? beSnapshot);
 
   return {
-    appearance, shop, vouchers, now,
+    appearance, shop, vouchers, now, platformFees: store.platformFees,
     menus: {
       shop: dishes,
       grab: grabMenu.map(withSharedTags),
