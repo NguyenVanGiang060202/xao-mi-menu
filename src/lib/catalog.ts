@@ -177,8 +177,12 @@ export function sharedDishTags(shopDishes: MenuDish[]) {
     const original = originals.get(dish.id);
     if (original && !tagsByDish.has(original)) tagsByDish.set(original, getDishTags(dish));
   }
-  return (dish: PlatformDraftDish): PlatformDraftDish => ({
-    ...dish,
-    tags: tagsByDish.get(dishMatchKey(dish)) ?? [],
-  });
+  return (dish: PlatformDraftDish): PlatformDraftDish => {
+    // Nhãn tự đặt cho từng sàn được ưu tiên; món chưa có nhãn riêng thì dùng nhãn của Menu quán.
+    const hasOwnTags = dish.tags !== undefined || Boolean(dish.tag);
+    return {
+      ...dish,
+      tags: hasOwnTags ? getDishTags(dish) : (tagsByDish.get(dishMatchKey(dish)) ?? []),
+    };
+  };
 }
