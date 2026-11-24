@@ -119,41 +119,6 @@ const platformDishChangeSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(40)).max(5).optional(),
 });
 
-export async function confirmPlatformMenu(value: unknown) {
-  await requireAdmin();
-  if (!process.env.DATABASE_URL) return { ok: false, message: "Cần cấu hình DATABASE_URL để công bố menu." };
-  const parsed = z.object({
-    platform: syncTargetSchema,
-    previousSync: z.union([z.literal(""), z.iso.datetime()]),
-    digest: z.string().regex(/^[a-f0-9]{64}$/),
-    changes: z.array(platformDishChangeSchema).max(2000).optional(),
-    removedIds: z.array(z.string().min(1).max(120)).max(2000).optional(),
-    orderedIds: z.array(z.string().min(1).max(120)).max(2000).optional(),
-  }).safeParse(value);
-  if (!parsed.success) return { ok: false, message: "Bản duyệt không hợp lệ. Hãy đồng bộ lại." };
-  const { platform, digest, previousSync, removedIds, orderedIds } = parsed.data;
-  const store = await readStore();
-  let dishes: PlatformDraftDish[];
-  try {
-    dishes = await fetchPlatformMenu(platform, store.beMenu?.dishes);
-  } catch (error) {
-    return {
-      ok: false, needsGrabConnection: error instanceof GrabSessionError,
-      message: error instanceof GrabSyncError ? error.message : "Không lấy được thực đơn để công bố. Hãy thử lại.",
-    };
-  }
-  if (menuDigest(dishes) !== digest) {
-    return { ok: false, message: "Thực đơn trên nền tảng đã thay đổi. Hãy bỏ bản duyệt và đồng bộ lại." };
-  }
-  if (parsed.data.changes?.length || removedIds?.length || orderedIds?.length) {
-    dishes = applyPlatformDishChanges(dishes, parsed.data.changes ?? [], removedIds, orderedIds);
-  }
-  if (!await publishPlatformMenu(platform, dishes, previousSync)) {
-    return { ok: false, message: "Menu đã được cập nhật ở phiên khác. Hãy tải lại để duyệt bản mới." };
-  }
-  return { ok: true, message: `Đã công bố ${dishes.length} món lên tab ${platformMenus[platform].label}.` };
-}
-
 export async function updatePlatformMenu(value: unknown) {
   await requireAdmin();
   if (!process.env.DATABASE_URL) return { ok: false, message: "Cần cấu hình DATABASE_URL để lưu menu." };
@@ -175,7 +140,10 @@ export async function updatePlatformMenu(value: unknown) {
 
   const baselineDishes = snapshot?.dishes ?? (await fetchPlatformMenu(platform, store.beMenu?.dishes).catch(() => []));
   const dishes = applyPlatformDishChanges(baselineDishes, changes ?? [], removedIds, orderedIds);
-  if (!await savePlatformMenuDishes(platform, dishes, snapshot?.syncedAt ?? "")) {
+  const saved = snapshot
+    ? await savePlatformMenuDishes(platform, dishes, snapshot.syncedAt)
+    : await publishPlatformMenu(platform, dishes, "");
+  if (!saved) {
     return { ok: false, message: "Menu đã thay đổi ở phiên khác. Hãy tải lại trang rồi sửa lại." };
   }
   revalidatePath("/");

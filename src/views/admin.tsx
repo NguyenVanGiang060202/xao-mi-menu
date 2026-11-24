@@ -13,7 +13,6 @@ import type { Store } from "@/lib/store";
 import type { PublicMenu } from "@/lib/public-menu";
 import { cancelSchedule, logout, updateSeasonSchedule, updateShop, updateTheme, uploadImage as uploadAsset } from "@/app/actions";
 import { MenuUnifiedManager } from "./menu-unified-manager";
-import { PlatformMenuSync } from "./platform-menu-sync";
 import { PlatformFees } from "./platform-fees";
 import { AppearancePreview } from "./appearance-preview";
 import { AdminTracking } from "./admin-tracking";
@@ -148,13 +147,6 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
               store={store}
               menuRevision={menuRevision}
               publicMenu={publicMenu}
-              notify={notify}
-            />
-            <PlatformMenuSync
-              beMenu={store.beMenu}
-              grabMenu={store.grabMenu}
-              xanhMenu={store.xanhMenu}
-              menus={publicMenu.menus}
               notify={notify}
             />
             <PlatformFees fees={store.platformFees} notify={notify} />

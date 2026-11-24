@@ -24,8 +24,9 @@ import { platformMenus, type MenuDish, type Platform, type PlatformDraftDish } f
 import type { Store } from "@/lib/store";
 import type { PublicMenu } from "@/lib/public-menu";
 import type { NotifyAdmin } from "@/components/admin-toast";
-import { syncBeToShop, updatePlatformMenu, updateShopMenu, uploadImage as uploadAsset } from "@/app/actions";
+import { previewPlatformMenu, syncBeToShop, updatePlatformMenu, updateShopMenu, uploadImage as uploadAsset } from "@/app/actions";
 import { ShopMenuOrder } from "./shop-menu-order";
+import { GrabConnection } from "./grab-connection";
 import { diffPlatformDishes, type PlatformDishChange } from "@/lib/platform-dish";
 
 type MenuTabKey = "shop" | Platform;
@@ -36,6 +37,7 @@ const menuTabs: { key: MenuTabKey; label: string; badgeColor: string }[] = [
   { key: "be", label: "beFood", badgeColor: "bg-amber-500 text-white" },
   { key: "xanh", label: "Xanh SM Ngon", badgeColor: "bg-cyan-600 text-white" },
 ];
+const syncTime = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" });
 
 export function MenuUnifiedManager({
   store,
@@ -60,6 +62,8 @@ export function MenuUnifiedManager({
   // State các sàn (Grab, be, Xanh)
   const [platformDrafts, setPlatformDrafts] = useState<Partial<Record<Platform, PlatformDraftDish[]>>>({});
   const [savingPlatform, setSavingPlatform] = useState<Platform | null>(null);
+  const [syncingPlatform, setSyncingPlatform] = useState<Platform | null>(null);
+  const [reconnectRequired, setReconnectRequired] = useState(false);
 
   // Reorder mode cho từng tab
   const [reordering, setReordering] = useState(false);
@@ -90,7 +94,12 @@ export function MenuUnifiedManager({
 
   const currentTabDishes = activeTab === "shop" ? currentShopDishes : currentPlatformDishes(activeTab);
   const currentTabGroups = groupMenu(currentTabDishes as readonly { id: string; category: string }[]) as { category: string; dishes: (MenuDish | PlatformDraftDish)[] }[];
-  const isBusy = syncingShop || savingShop || Boolean(savingPlatform);
+  // Danh mục của sàn có thể khác quán (vd. "Combo bán chạy"), nên luôn giữ danh mục hiện có trong ô chọn.
+  const categoryOptions = [...new Set([
+    ...currentTabDishes.map(dish => dish.category),
+    "Combo", "Mì xào", "Mì trộn", "Ăn kèm", "Đồ uống",
+  ])].filter(Boolean);
+  const isBusy = syncingShop || savingShop || Boolean(savingPlatform) || Boolean(syncingPlatform);
 
   // Parsing giá
   const priceText = dishPriceInput.trim().replace(",", ".");
@@ -200,6 +209,27 @@ export function MenuUnifiedManager({
     }
   }
 
+  // Đồng bộ menu sàn vào bản đang chỉnh, sau đó bấm Lưu như bình thường.
+  async function syncPlatform(platform: Platform) {
+    if (isBusy || platformDrafts[platform]) return;
+    setSyncingPlatform(platform);
+    setReconnectRequired(false);
+    try {
+      const result = await previewPlatformMenu(platform);
+      if (!result.ok) {
+        if (result.needsGrabConnection) setReconnectRequired(true);
+        notify(result.message, "error");
+        return;
+      }
+      setPlatformDrafts(current => ({ ...current, [platform]: result.dishes }));
+      notify(`Đã lấy ${result.dishes.length} món từ ${platformMenus[platform].label}. Kiểm tra rồi bấm Lưu ${platformMenus[platform].label}.`, "success");
+    } catch {
+      notify(`Không lấy được thực đơn ${platformMenus[platform].label}. Hãy thử lại.`, "error");
+    } finally {
+      setSyncingPlatform(null);
+    }
+  }
+
   // Lưu Menu quán
   async function saveShopMenu() {
     if (isBusy || !shopDraftDishes) return;
@@ -232,13 +262,14 @@ export function MenuUnifiedManager({
     if (isBusy || !draft) return;
     setSavingPlatform(platform);
     try {
-      const baseline = getPlatformBaseline(platform);
+      const snapshot = store[platformMenus[platform].key];
+      // Chưa có bản lưu: gửi toàn bộ danh sách để tạo bản đầu tiên.
+      const baseline = snapshot?.dishes ?? [];
       const currentIds = new Set(draft.map(d => d.id));
       const removedIds = baseline.filter(d => !currentIds.has(d.id)).map(d => d.id);
       const changes: PlatformDishChange[] = diffPlatformDishes(baseline, draft);
       const orderedIds = draft.map(d => d.id);
 
-      const snapshot = store[platformMenus[platform].key];
       const result = await updatePlatformMenu({
         platform,
         previousSync: snapshot?.syncedAt ?? "",
@@ -285,6 +316,7 @@ export function MenuUnifiedManager({
   }
 
   const currentTabLabel = menuTabs.find(t => t.key === activeTab)?.label ?? "Menu";
+  const lastSyncedAt = activeTab === "shop" ? undefined : store[platformMenus[activeTab].key]?.syncedAt;
 
   return (
     <section className="admin-sheet">
@@ -326,6 +358,15 @@ export function MenuUnifiedManager({
         </div>
       </div>
 
+      {activeTab === "grab" && (
+        <GrabConnection
+          disabled={isBusy}
+          reconnectRequired={reconnectRequired}
+          notify={notify}
+          onChange={() => { setReconnectRequired(false); router.refresh(); }}
+        />
+      )}
+
       {/* Toolbar điều khiển của tab đang chọn */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -335,6 +376,11 @@ export function MenuUnifiedManager({
               ({currentTabDishes.length} món · {currentTabDishes.filter(d => d.available).length} đang bán)
             </span>
           </h3>
+          {activeTab !== "shop" && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lastSyncedAt ? `Đồng bộ lần cuối ${syncTime.format(new Date(lastSyncedAt))}` : "Chưa đồng bộ lần nào"}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -348,14 +394,25 @@ export function MenuUnifiedManager({
             {reordering ? "Xong sắp xếp" : "Sắp xếp"}
           </Button>
 
-          {activeTab === "shop" && (
+          {activeTab === "shop" ? (
             <Button
               variant="outline"
               disabled={isBusy || Boolean(shopDraftDishes)}
+              title={shopDraftDishes ? "Lưu hoặc bỏ thay đổi trước khi đồng bộ" : undefined}
               onClick={() => void syncShop()}
             >
               <RefreshCw size={15} className={syncingShop ? "animate-spin" : ""} />
               {syncingShop ? "Đang đồng bộ…" : "Đồng bộ từ beFood"}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              disabled={isBusy || Boolean(platformDrafts[activeTab])}
+              title={platformDrafts[activeTab] ? "Lưu hoặc bỏ thay đổi trước khi đồng bộ" : undefined}
+              onClick={() => void syncPlatform(activeTab)}
+            >
+              <RefreshCw size={15} className={syncingPlatform === activeTab ? "animate-spin" : ""} />
+              {syncingPlatform === activeTab ? "Đang đồng bộ…" : `Đồng bộ từ ${currentTabLabel}`}
             </Button>
           )}
 
@@ -385,7 +442,7 @@ export function MenuUnifiedManager({
       <div className="sticky top-2 z-10 mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:px-4">
         <p role="status" className="text-sm">
           <span className="font-bold">
-            {isCurrentTabDirty() ? "Có thay đổi chưa lưu" : `Menu ${currentTabLabel} đã lưu`}
+            {isCurrentTabDirty() ? "Có thay đổi chưa lưu" : `${currentTabLabel} đã lưu`}
           </span>
           <span className="mt-0.5 block text-xs text-muted-foreground">
             {isCurrentTabDirty()
@@ -528,7 +585,7 @@ export function MenuUnifiedManager({
                     onChange={event => setDishDraft({ ...dishDraft, category: event.target.value })}
                     className="mt-2 h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
                   >
-                    {["Combo", "Mì xào", "Mì trộn", "Ăn kèm", "Đồ uống"].map(name => (
+                    {categoryOptions.map(name => (
                       <option key={name}>{name}</option>
                     ))}
                   </select>
