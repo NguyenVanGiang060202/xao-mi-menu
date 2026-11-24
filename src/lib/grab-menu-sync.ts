@@ -36,8 +36,7 @@ export function withVerifiedGrabPrices(dish: PlatformDraftDish): PlatformDraftDi
 }
 
 export function completeGrabMenu(source: readonly PlatformDraftDish[], beDishes: readonly PlatformDraftDish[]): PlatformDraftDish[] {
-  const dishes = source.filter(dish => !dish.supplementedFrom).map(dish =>
-    withVerifiedGrabPrices(localizeGrabDish(dish, beDishes)));
+  const dishes = source.map(dish => withVerifiedGrabPrices(localizeGrabDish(dish, beDishes)));
   const names = new Set(dishes.map(dish => dishNameKey(dish.name)));
   for (const dish of beDishes) {
     const key = dishNameKey(dish.name);

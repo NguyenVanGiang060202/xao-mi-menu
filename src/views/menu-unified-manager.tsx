@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { dishTagPresets, formatPrice, getDishTags } from "@/lib/menu-data";
 import { groupMenu } from "@/lib/menu-order";
-import { platformMenus, type MenuDish, type Platform, type PlatformDraftDish } from "@/lib/catalog";
+import { dishNameKey, platformMenus, type MenuDish, type Platform, type PlatformDraftDish } from "@/lib/catalog";
 import type { Store } from "@/lib/store";
 import type { PublicMenu } from "@/lib/public-menu";
 import type { NotifyAdmin } from "@/components/admin-toast";
@@ -38,6 +38,29 @@ const menuTabs: { key: MenuTabKey; label: string; badgeColor: string }[] = [
   { key: "xanh", label: "Xanh SM Ngon", badgeColor: "bg-cyan-600 text-white" },
 ];
 const syncTime = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" });
+
+function parseFlexiblePrice(rawInput: string): number | null | undefined {
+  const trimmed = rawInput.trim();
+  if (!trimmed) return null;
+  const cleaned = trimmed.toLowerCase().replace(/vnđ|đ|k/g, "").replace(/\s+/g, "");
+  if (!cleaned) return null;
+
+  // Dạng 75.000 hoặc 75,000 (phân cách hàng nghìn)
+  if (/^\d{1,3}(?:[.,]\d{3})+$/.test(cleaned)) {
+    const val = Number(cleaned.replace(/[.,]/g, ""));
+    return Number.isSafeInteger(val) && val >= 0 && val <= 100000000 ? val : undefined;
+  }
+
+  // Dạng số thường hoặc số thập phân như 75 hoặc 75.5 hoặc 75,5
+  const normalized = cleaned.replace(",", ".");
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return undefined;
+  const num = Number(normalized);
+  if (isNaN(num) || num < 0) return undefined;
+
+  // Nếu người dùng nhập >= 1000 (ví dụ 75000), lấy luôn số đó. Nếu < 1000 (ví dụ 75 hoặc 75.5), nhân 1000
+  const val = num >= 1000 ? Math.round(num) : Math.round(num * 1000);
+  return Number.isSafeInteger(val) && val <= 100000000 ? val : undefined;
+}
 
 export function MenuUnifiedManager({
   store,
@@ -79,6 +102,26 @@ export function MenuUnifiedManager({
   // Baseline dishes cho từng sàn
   function getPlatformBaseline(platform: Platform): PlatformDraftDish[] {
     const snapshot = store[platformMenus[platform].key];
+    if (platform === "grab") {
+      const source = snapshot?.dishes ?? publicMenu.menus.grab;
+      const beDishes = store.beMenu?.dishes ?? publicMenu.menus.be;
+      const names = new Set(source.map(dish => dishNameKey(dish.name)));
+      const supplemented: PlatformDraftDish[] = [];
+      for (const dish of beDishes) {
+        const key = dishNameKey(dish.name);
+        if (!names.has(key)) {
+          names.add(key);
+          supplemented.push({
+            ...dish,
+            id: `be-fallback-${dish.id}`,
+            price: null,
+            originalPrice: undefined,
+            supplementedFrom: "be",
+          });
+        }
+      }
+      return [...source, ...supplemented];
+    }
     if (snapshot?.dishes) return snapshot.dishes;
     return publicMenu.menus[platform] ?? [];
   }
@@ -101,16 +144,13 @@ export function MenuUnifiedManager({
   ])].filter(Boolean);
   const isBusy = syncingShop || savingShop || Boolean(savingPlatform) || Boolean(syncingPlatform);
 
-  // Parsing giá
-  const priceText = dishPriceInput.trim().replace(",", ".");
-  const parsedPrice = priceText ? (/^\d+(?:\.\d{0,3})?$/.test(priceText) ? Math.round(Number(priceText) * 1000) : NaN) : null;
+  // Parsing giá linh hoạt (hỗ trợ cả 65, 65000, 65.000, 65k, 65,5)
+  const parsedPrice = parseFlexiblePrice(dishPriceInput);
   const validPrice = activeTab === "shop"
-    ? (Number.isSafeInteger(parsedPrice) && parsedPrice !== null && parsedPrice >= 0 && parsedPrice <= 100000000 ? parsedPrice : null)
-    : (priceText ? (Number.isSafeInteger(parsedPrice) && parsedPrice !== null && parsedPrice >= 0 && parsedPrice <= 100000000 ? parsedPrice : undefined) : null);
+    ? (parsedPrice !== null && parsedPrice !== undefined ? parsedPrice : null)
+    : parsedPrice;
 
-  const origPriceText = dishOriginalPriceInput.trim().replace(",", ".");
-  const parsedOrig = origPriceText ? (/^\d+(?:\.\d{0,3})?$/.test(origPriceText) ? Math.round(Number(origPriceText) * 1000) : NaN) : null;
-  const validOrigPrice = origPriceText ? (Number.isSafeInteger(parsedOrig) && parsedOrig !== null && parsedOrig >= 0 && parsedOrig <= 100000000 ? parsedOrig : undefined) : undefined;
+  const validOrigPrice = parseFlexiblePrice(dishOriginalPriceInput) ?? undefined;
 
   // Xử lý món
   function openDish(dish: MenuDish | PlatformDraftDish) {
@@ -594,7 +634,7 @@ export function MenuUnifiedManager({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="unified-dish-price" className="block text-xs font-semibold">
-                      {activeTab === "shop" ? "Giá tại quán (nghìn đ)" : "Giá bán (nghìn đ)"}
+                      {activeTab === "shop" ? "Giá tại quán (nghìn đ hoặc VNĐ)" : "Giá bán (nghìn đ hoặc VNĐ · Trống = chưa có)"}
                     </label>
                     <Input
                       id="unified-dish-price"
@@ -602,19 +642,19 @@ export function MenuUnifiedManager({
                       inputMode="decimal"
                       value={dishPriceInput}
                       onChange={event => setDishPriceInput(event.target.value)}
-                      placeholder={activeTab === "shop" ? "Ví dụ 65" : "Trống = chưa có"}
+                      placeholder={activeTab === "shop" ? "Ví dụ 65 hoặc 65.000" : "Ví dụ 75 hoặc để trống"}
                       className="mt-2 tabular-nums"
                     />
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {validPrice !== undefined
-                        ? (validPrice !== null ? formatPrice(validPrice) : (activeTab === "shop" ? "Nhập giá" : "Chưa có giá"))
-                        : "Giá không hợp lệ"}
+                        ? (validPrice !== null ? formatPrice(validPrice) : (activeTab === "shop" ? "Nhập giá bán" : "Chưa có giá"))
+                        : "Giá không hợp lệ (nhập ví dụ 65 hoặc 65.000)"}
                     </p>
                   </div>
 
                   <div>
                     <label htmlFor="unified-orig-price" className="block text-xs font-semibold">
-                      Giá gốc (nghìn đ)
+                      Giá gốc (nghìn đ hoặc VNĐ)
                     </label>
                     <Input
                       id="unified-orig-price"
@@ -622,7 +662,7 @@ export function MenuUnifiedManager({
                       inputMode="decimal"
                       value={dishOriginalPriceInput}
                       onChange={event => setDishOriginalPriceInput(event.target.value)}
-                      placeholder="Trống = không gạch"
+                      placeholder="Ví dụ 80 hoặc 80.000 (trống = không gạch)"
                       className="mt-2 tabular-nums"
                     />
                     <p className="mt-1 text-[11px] text-muted-foreground">
@@ -682,11 +722,14 @@ export function MenuUnifiedManager({
                     (activeTab === "shop" && validPrice === null)
                   }
                   onClick={() => {
+                    const resolvedPrice = validPrice ?? (activeTab === "shop" ? 0 : null);
+                    const { supplementedFrom, ...cleanDraft } = dishDraft as PlatformDraftDish;
                     stageDish(dishDraft.id, {
-                      ...dishDraft,
+                      ...cleanDraft,
                       name: dishDraft.name.trim(),
-                      price: (validPrice ?? (activeTab === "shop" ? 0 : null)) as number,
+                      price: resolvedPrice as number,
                       originalPrice: validOrigPrice,
+                      ...(resolvedPrice === null && supplementedFrom ? { supplementedFrom } : {}),
                     });
                     closeDish();
                   }}

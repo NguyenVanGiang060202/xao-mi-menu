@@ -223,7 +223,8 @@ export function MenuPage({
               className={`menu-channel-cta ${channelStyles[channel]} inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold sm:flex-none`}>
               <span className="menu-cta-label">{order.label}</span><ArrowUpRight size={16} aria-hidden="true" />
             </a>
-            {channel !== "shop" && <Button variant="outline" className="min-h-11 rounded-xl" onClick={() => setEstimatorOpen(true)}>
+            {/* Tạm ẩn phần tính tiền theo yêu cầu */}
+            {false && channel !== "shop" && <Button variant="outline" className="min-h-11 rounded-xl" onClick={() => setEstimatorOpen(true)}>
               <ReceiptText size={16} aria-hidden="true" />Tính tiền
             </Button>}
           </div>
@@ -254,8 +255,10 @@ export function MenuPage({
         </section>) : <div className="mb-8 rounded-3xl border border-dashed border-primary/25 bg-card py-12 text-center text-sm text-muted-foreground">{menu.length ? "Chưa tìm thấy món phù hợp." : "Menu quán đang được cập nhật."}{!menu.length && <div className="mt-3 flex justify-center gap-3"><Button variant="outline" onClick={() => selectChannel("grab")}>Xem menu GrabFood</Button><Button variant="outline" onClick={() => selectChannel("be")}>Xem menu beFood</Button></div>}</div>}
         </div>
       </div>
+      {/* Tạm ẩn phần tính tiền theo yêu cầu
       {channel !== "shop" && <OrderEstimator key={`estimator-${channel}`} open={estimatorOpen} onOpenChange={setEstimatorOpen}
         platform={channel} dishes={menus[channel]} vouchers={vouchers[channel]} fees={platformFees[channel]} />}
+      */}
     </main>
   );
 }

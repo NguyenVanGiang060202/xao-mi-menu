@@ -149,7 +149,8 @@ export function AdminPage({ store, menuRevision, publicMenu }: { store: Store; m
               publicMenu={publicMenu}
               notify={notify}
             />
-            <PlatformFees fees={store.platformFees} notify={notify} />
+            {/* Tạm ẩn phần tính tiền / phí nền tảng */}
+            {/* <PlatformFees fees={store.platformFees} notify={notify} /> */}
           </>
         ) : activeSection === "vouchers" ? (
           <VoucherAdmin vouchers={store.vouchers} draft={voucherDraft} onDraftChange={setVoucherDraft} notify={notify} />
