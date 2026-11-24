@@ -116,7 +116,6 @@ export function MenuUnifiedManager({
             id: `be-fallback-${dish.id}`,
             price: null,
             originalPrice: undefined,
-            supplementedFrom: "be",
           });
         }
       }
@@ -729,7 +728,6 @@ export function MenuUnifiedManager({
                       name: dishDraft.name.trim(),
                       price: resolvedPrice as number,
                       originalPrice: validOrigPrice,
-                      ...(resolvedPrice === null && supplementedFrom ? { supplementedFrom } : {}),
                     });
                     closeDish();
                   }}

@@ -36,7 +36,11 @@ export function withVerifiedGrabPrices(dish: PlatformDraftDish): PlatformDraftDi
 }
 
 export function completeGrabMenu(source: readonly PlatformDraftDish[], beDishes: readonly PlatformDraftDish[]): PlatformDraftDish[] {
-  const dishes = source.map(dish => withVerifiedGrabPrices(localizeGrabDish(dish, beDishes)));
+  const dishes = source.map(dish => {
+    const localized = withVerifiedGrabPrices(localizeGrabDish(dish, beDishes));
+    const { supplementedFrom, ...rest } = localized;
+    return rest;
+  });
   const names = new Set(dishes.map(dish => dishNameKey(dish.name)));
   for (const dish of beDishes) {
     const key = dishNameKey(dish.name);
@@ -47,7 +51,6 @@ export function completeGrabMenu(source: readonly PlatformDraftDish[], beDishes:
       id: `be-fallback-${dish.id}`,
       price: null,
       originalPrice: undefined,
-      supplementedFrom: "be",
     });
   }
   return dishes;
