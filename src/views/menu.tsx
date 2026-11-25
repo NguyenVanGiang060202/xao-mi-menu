@@ -9,7 +9,7 @@ import { SeasonGutterStickers, SeasonSticker } from "@/components/season-sticker
 import { StorefrontAwning } from "@/components/storefront-awning";
 import { formatPrice, getDishTags, themes, type Channel } from "@/lib/menu-data";
 import { channels, defaultShopSchedule, shopDays, shopLocation, type PlatformDraftDish as Dish, type Appearance, type PlatformFeeMap, type ShopInfo, type VoucherMap } from "@/lib/catalog";
-import { contactName, zaloNumber, zaloUrl } from "@/lib/contact";
+import { contactName, facebookUrl, zaloNumber, zaloUrl } from "@/lib/contact";
 import { VoucherList } from "@/components/voucher-list";
 import { trackingCategories, trackingScrollLevels, type TrackingEvent } from "@/lib/tracking-data";
 const channelNames: Record<Channel, string> = { shop: "Menu quán", grab: "GrabFood", be: "beFood", xanh: "Xanh SM Ngon" };
@@ -187,13 +187,25 @@ export function MenuPage({
                 className="menu-order-cta menu-channel-cta menu-channel-xanh inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full px-5 text-base font-extrabold sm:text-lg">
                 <span className="menu-cta-label">Đặt qua Xanh SM Ngon</span><ArrowUpRight size={20} aria-hidden="true" />
               </a>
-              <a href={zaloUrl} target="_blank" rel="noreferrer"
-                aria-label={`Nhắn Zalo để phản ánh ${zaloNumber}, ${contactName}`}
-                onClick={(event) => trackLink(event, "zalo", "zalo_contact")}
-                onAuxClick={(event) => trackLink(event, "zalo", "zalo_contact")}
-                className="menu-zalo-cta inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-base font-bold">
-                <MessageCircle size={20} aria-hidden="true" />Nhắn Zalo để phản ánh
-              </a>
+              <div className="menu-contact-row">
+                <a href={zaloUrl} target="_blank" rel="noreferrer"
+                  aria-label={`Nhắn Zalo để phản ánh ${zaloNumber}, ${contactName}`}
+                  onClick={(event) => trackLink(event, "zalo", "zalo_contact")}
+                  onAuxClick={(event) => trackLink(event, "zalo", "zalo_contact")}
+                  className="menu-zalo-cta inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-3 text-base font-bold">
+                  <MessageCircle size={20} aria-hidden="true" />Nhắn Zalo
+                </a>
+                <a href={facebookUrl} target="_blank" rel="noreferrer"
+                  aria-label={`Mở Facebook của ${contactName}`}
+                  onClick={(event) => trackLink(event, "facebook_contact")}
+                  onAuxClick={(event) => trackLink(event, "facebook_contact")}
+                  className="menu-zalo-cta menu-facebook-cta inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-3 text-base font-bold">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+                    <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.78-1.63 1.57v1.88h2.78l-.44 2.9h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z" />
+                  </svg>
+                  Facebook
+                </a>
+              </div>
               <ul className="menu-hero-meta" aria-label="Thông tin quán">
                 <li className="menu-hero-hours">
                   <Clock3 size={18} aria-hidden="true" />

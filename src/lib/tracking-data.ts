@@ -25,7 +25,7 @@ export const trackingCategories = [
 export const trackingScrollLevels = [25, 50, 75, 100] as const;
 export const trackingEvents = [
   "view", ...trackingChannels.map(({ event }) => event),
-  "maps", "grab_price", "zalo_contact", "zalo_navigation",
+  "maps", "grab_price", "zalo_contact", "zalo_navigation", "facebook_contact",
   ...trackingScrollLevels.map((level) => `scroll_${level}` as const),
   ...trackingMenuTabs.flatMap(({ id }) => [
     `tab_${id}` as const,

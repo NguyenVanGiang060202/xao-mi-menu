@@ -1,4 +1,4 @@
-import { zaloUrl } from "@/lib/contact";
+import { facebookUrl, zaloUrl } from "@/lib/contact";
 
 const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL
   ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "https://xaomimenu.vercel.app");
@@ -53,5 +53,5 @@ export const restaurantJsonLd = {
       closes: "23:59",
     },
   ],
-  sameAs: [zaloUrl],
+  sameAs: [zaloUrl, facebookUrl],
 };

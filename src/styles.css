@@ -320,6 +320,19 @@
 .menu-zalo-cta:focus-visible,
 .menu-hero-meta a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 
+.menu-contact-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.menu-facebook-cta {
+  background: #e8f0fe;
+  color: #17408b;
+  box-shadow: 0 0.2rem 0 #a9c2e8, 0 0.7rem 1rem -0.6rem #102a5688;
+}
+.menu-facebook-cta:hover { background: #f3f7ff; }
+
 .menu-hero-meta {
   display: flex;
   flex-wrap: wrap;
@@ -865,7 +878,6 @@
   .menu-channel-cta:active,
   .menu-filter:active,
   .menu-zalo-cta:active { scale: 0.97; translate: 0 1px; }
-
   .menu-channel-cta svg,
   .menu-contact-value svg,
   .menu-zalo-cta svg,

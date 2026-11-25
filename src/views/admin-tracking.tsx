@@ -24,6 +24,7 @@ function InteractionBreakdown({ totals }: { totals: TrackingCounts }) {
     { label: "Xem giá trên GrabFood", total: totals.grab_price },
     { label: "Zalo ở thông tin quán", total: totals.zalo_contact },
     { label: "Zalo ở thanh thực đơn", total: totals.zalo_navigation },
+    { label: "Facebook ở thông tin quán", total: totals.facebook_contact },
   ];
   return <section className="mt-6 space-y-4" aria-labelledby="tracking-interactions">
     <div>
