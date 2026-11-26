@@ -12,6 +12,7 @@ import { channels, defaultShopSchedule, shopDays, shopLocation, type PlatformDra
 import { contactName, facebookUrl, zaloNumber, zaloUrl } from "@/lib/contact";
 import { VoucherList } from "@/components/voucher-list";
 import { trackingCategories, trackingScrollLevels, type TrackingEvent } from "@/lib/tracking-data";
+import { isTrackingOptedOut } from "@/lib/tracking-optout";
 const channelNames: Record<Channel, string> = { shop: "Menu quán", grab: "GrabFood", be: "beFood", xanh: "Xanh SM Ngon" };
 const categoryIcons: Record<string, typeof Soup> = {
   Combo: Layers,
@@ -34,6 +35,7 @@ const channelStyles: Record<Channel, string> = {
 const compactShopDays = { weekday: "T2 – T6", weekend: "T7 – CN" } as const;
 
 function sendMenuEvents(...events: TrackingEvent[]) {
+  if (isTrackingOptedOut()) return;
   const query = new URLSearchParams(events.map((event) => ["event", event]));
   void fetch(`/api/menu-tracking?${query}`, { method: "POST", keepalive: true }).catch(() => {});
 }

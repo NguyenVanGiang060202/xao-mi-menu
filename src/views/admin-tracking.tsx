@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { getMenuTracking } from "@/app/actions";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { trackingCategories, trackingChannels, trackingEvents, trackingMenuTabs, trackingPeriods, trackingScrollLevels, type TrackingCounts, type TrackingDay, type TrackingPeriod } from "@/lib/tracking-data";
+import { isTrackingOptedOut, setTrackingOptOut } from "@/lib/tracking-optout";
 import { TrackingTrend } from "./tracking-trend";
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
@@ -83,6 +85,16 @@ export function AdminTracking() {
   const [period, setPeriod] = useState<TrackingPeriod>(7);
   const [refresh, setRefresh] = useState(0);
   const [result, setResult] = useState<TrackingDay[] | "error" | null>(null);
+  const [optedOut, setOptedOut] = useState(false);
+
+  useEffect(() => {
+    setOptedOut(isTrackingOptedOut());
+  }, []);
+
+  function handleToggleOptOut(checked: boolean) {
+    setTrackingOptOut(checked);
+    setOptedOut(checked);
+  }
 
   useEffect(() => {
     let current = true;
@@ -122,6 +134,34 @@ export function AdminTracking() {
           onClick={() => { setResult(null); setRefresh((value) => value + 1); }}
         ><RefreshCw size={16} aria-hidden="true" />Làm mới</Button>
       </div>
+    </div>
+
+    {/* Bảng điều khiển loại trừ thiết bị người quản trị */}
+    <div className="mt-4 rounded-xl border border-border bg-card p-3 sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1.5 text-sm font-semibold">
+            <span>{optedOut ? "🛡️" : "👀"}</span>
+            <span>{optedOut ? "Đang loại trừ thiết bị này (Không tính lượt xem)" : "Đang tính lượt xem như khách thường"}</span>
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {optedOut
+              ? "Trình duyệt này đã được đánh dấu nội bộ: Mọi thao tác xem hoặc bấm thực đơn sẽ không gửi lên Vercel Analytics và không tính vào hệ thống của quán."
+              : "Bật công tắc này để bỏ qua các lần bạn vào xem hoặc thử nghiệm menu trên máy này, tránh làm sai lệch số liệu thống kê."}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <span className="text-xs font-semibold">{optedOut ? "Đã tắt theo dõi" : "Đang bật theo dõi"}</span>
+          <Switch
+            checked={optedOut}
+            onCheckedChange={handleToggleOptOut}
+            aria-label="Loại trừ thiết bị này khỏi thống kê"
+          />
+        </div>
+      </div>
+      <p className="mt-2.5 border-t border-border pt-2 text-[11px] text-muted-foreground">
+        💡 <b>Mẹo cho điện thoại cá nhân:</b> Bạn chỉ cần mở link <code className="rounded bg-secondary px-1.5 py-0.5 font-mono text-primary">/?ignore_me=1</code> một lần duy nhất trên trình duyệt điện thoại, máy đó sẽ tự động được loại trừ vĩnh viễn.
+      </p>
     </div>
 
     <div className="mt-5" aria-busy={result === null}>

@@ -2,12 +2,18 @@ import type { NextRequest } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
 import { recordMenuEvents } from "@/lib/menu-tracking";
 import { trackingEvents, type TrackingEvent } from "@/lib/tracking-data";
+import { OPTOUT_KEY } from "@/lib/tracking-optout";
 
 const allowedEvents = new Set<string>(trackingEvents);
 
 export async function POST(request: NextRequest) {
   if (request.headers.get("origin") !== request.nextUrl.origin) {
     return new Response(null, { status: 403 });
+  }
+
+  // Bỏ qua nếu thiết bị đã bật chế độ loại trừ qua cookie
+  if (request.cookies.get(OPTOUT_KEY)?.value === "1") {
+    return new Response(null, { status: 204 });
   }
 
   const events = request.nextUrl.searchParams.getAll("event");

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/baloo-2";
 import "../styles.css";
 import { restaurantJsonLd, siteDescription, siteName, siteOgImage, siteTitle, siteUrl } from "@/lib/site";
+import { AppAnalytics } from "@/components/app-analytics";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -68,6 +69,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <html lang="vi">
       <body>
         {children}
+        <AppAnalytics />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(restaurantJsonLd).replace(/</g, "\\u003c") }}
