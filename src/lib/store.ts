@@ -3,6 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { defaultAppearance, dishMatchKey, emptyPlatformFees, platformMenus, seedMenus, voucherChannels, type Appearance, type MenuDish, type Platform, type PlatformDraftDish, type PlatformFee, type PlatformFeeMap, type ShopInfo, type Voucher, type VoucherChannel, type VoucherDiscount, type VoucherMap } from "./catalog";
 import { isHolidayTheme } from "./menu-data";
 import { applyMenuOrder } from "./menu-order";
+import { preserveDishTags } from "./platform-dish";
 
 type PlatformMenuKey = (typeof platformMenus)[Platform]["key"];
 export type PlatformSnapshots = Partial<Record<PlatformMenuKey, { dishes: PlatformDraftDish[]; syncedAt: string }>>;
@@ -157,7 +158,8 @@ export async function syncBeShopDishes(source: MenuDish[]) {
     const key = dishMatchKey(dish);
     if (ids.has(id) || keys.has(key)) continue;
     keys.add(key);
-    dishes.push({ ...dish, id, originalPrice: undefined });
+    const [preserved] = preserveDishTags([dish], [current, defaults.dishes]);
+    dishes.push({ ...preserved, id, originalPrice: undefined });
     added++;
   }
   if (!added && !updated) return { added, updated };

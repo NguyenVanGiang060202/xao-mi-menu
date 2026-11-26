@@ -12,7 +12,7 @@ import { fetchGrabMenu, verifyGrabSession } from "@/lib/grab-menu-sync";
 import { clearGrabConnection, grabConnectionStatus, GrabSessionError, GrabSyncError, parseGrabCurl, saveGrabConnection } from "@/lib/grab-connection";
 import { platformMenus, type Platform, type PlatformDraftDish } from "@/lib/catalog";
 import { themeNames } from "@/lib/menu-data";
-import { applyPlatformDishChanges } from "@/lib/platform-dish";
+import { applyPlatformDishChanges, preserveDishTags } from "@/lib/platform-dish";
 import { readMenuTracking } from "@/lib/menu-tracking";
 import { trackingPeriods } from "@/lib/tracking-data";
 
@@ -76,8 +76,19 @@ export async function previewPlatformMenu(value: unknown) {
   const canPublish = Boolean(process.env.DATABASE_URL);
   try {
     const store = await readStore();
-    const dishes = await fetchPlatformMenu(platform, store.beMenu?.dishes);
+    const rawDishes = await fetchPlatformMenu(platform, store.beMenu?.dishes);
     const published = store[platformMenus[platform].key];
+    const otherPlatforms = (["grab", "be", "xanh"] as const)
+      .filter(p => p !== platform)
+      .map(p => store[platformMenus[p].key]?.dishes ?? []);
+
+    // Giữ nguyên tag nếu món trùng nhau với bản đã có của sàn này, menu quán hoặc các sàn khác
+    const dishes = preserveDishTags(rawDishes, [
+      published?.dishes ?? [],
+      store.dishes ?? [],
+      ...otherPlatforms,
+    ]);
+
     return { ok: true as const, dishes, digest: menuDigest(dishes), previousSync: published?.syncedAt ?? "", canPublish };
   } catch (error) {
     return {

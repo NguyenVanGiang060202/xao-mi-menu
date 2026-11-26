@@ -1,4 +1,5 @@
-﻿import type { PlatformDraftDish } from "./catalog";
+﻿import { dishNameKey, type PlatformDraftDish } from "./catalog";
+import { getDishTags } from "./menu-data";
 
 export type PlatformDishChange = {
   id: string;
@@ -113,4 +114,50 @@ export function diffPlatformDishes(baseline: readonly PlatformDraftDish[], edite
     }
   }
   return changes;
+}
+
+export type DishWithTags = {
+  id: string;
+  name: string;
+  tag?: string;
+  tags?: string[];
+};
+
+export function preserveDishTags<T extends DishWithTags>(
+  incoming: readonly T[],
+  sources: readonly (readonly DishWithTags[])[]
+): T[] {
+  const tagsById = new Map<string, { tag?: string; tags?: string[] }>();
+  const tagsByNameKey = new Map<string, { tag?: string; tags?: string[] }>();
+
+  for (const source of sources) {
+    for (const dish of source) {
+      const activeTags = getDishTags(dish);
+      if (activeTags.length > 0) {
+        if (!tagsById.has(dish.id)) {
+          tagsById.set(dish.id, { tag: dish.tag, tags: dish.tags ?? activeTags });
+        }
+        const nameKey = dishNameKey(dish.name);
+        if (!tagsByNameKey.has(nameKey)) {
+          tagsByNameKey.set(nameKey, { tag: dish.tag, tags: dish.tags ?? activeTags });
+        }
+      }
+    }
+  }
+
+  return incoming.map(dish => {
+    // Nếu món mới tải về đã có nhãn thì giữ nguyên
+    const existingActive = getDishTags(dish);
+    if (existingActive.length > 0) return dish;
+
+    // Tìm nhãn từ món trùng ID hoặc trùng tên
+    const matched = tagsById.get(dish.id) ?? tagsByNameKey.get(dishNameKey(dish.name));
+    if (!matched) return dish;
+
+    return {
+      ...dish,
+      tag: matched.tag,
+      tags: matched.tags,
+    };
+  });
 }

@@ -27,7 +27,7 @@ import type { NotifyAdmin } from "@/components/admin-toast";
 import { previewPlatformMenu, syncBeToShop, updatePlatformMenu, updateShopMenu, uploadImage as uploadAsset } from "@/app/actions";
 import { ShopMenuOrder } from "./shop-menu-order";
 import { GrabConnection } from "./grab-connection";
-import { diffPlatformDishes, type PlatformDishChange } from "@/lib/platform-dish";
+import { diffPlatformDishes, preserveDishTags, type PlatformDishChange } from "@/lib/platform-dish";
 
 type MenuTabKey = "shop" | Platform;
 
@@ -260,8 +260,14 @@ export function MenuUnifiedManager({
         notify(result.message, "error");
         return;
       }
-      setPlatformDrafts(current => ({ ...current, [platform]: result.dishes }));
-      notify(`Đã lấy ${result.dishes.length} món từ ${platformMenus[platform].label}. Kiểm tra rồi bấm Lưu ${platformMenus[platform].label}.`, "success");
+      const currentOfPlatform = currentPlatformDishes(platform);
+      const currentShop = currentShopDishes;
+      const preserved = preserveDishTags(result.dishes, [
+        currentOfPlatform,
+        currentShop,
+      ]);
+      setPlatformDrafts(current => ({ ...current, [platform]: preserved }));
+      notify(`Đã lấy ${result.dishes.length} món từ ${platformMenus[platform].label} (đã giữ lại các nhãn món). Kiểm tra rồi bấm Lưu ${platformMenus[platform].label}.`, "success");
     } catch {
       notify(`Không lấy được thực đơn ${platformMenus[platform].label}. Hãy thử lại.`, "error");
     } finally {
